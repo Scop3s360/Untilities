@@ -16,7 +16,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (targetId === 'dashboard') fetchJobs();
         if (targetId === 'profile') fetchProfile();
     });
-}
+});
 
 // Danger Zone Reset
 async function resetData() {
