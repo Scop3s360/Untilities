@@ -89,6 +89,15 @@ def get_jobs(db: Session = Depends(get_db)):
     scored_jobs.sort(key=lambda x: x.get("match_score", 0), reverse=True)
     return scored_jobs
 
+@app.delete("/reset")
+def reset_database(db: Session = Depends(get_db)):
+    """Wipes all data from the database to start fresh."""
+    db.query(models.Application).delete()
+    db.query(models.Job).delete()
+    db.query(models.CandidateProfile).delete()
+    db.commit()
+    return {"status": "success", "message": "All data wiped successfully"}
+
 @app.post("/trigger-scrape")
 async def trigger_scrape():
     """Manual trigger for scraping"""

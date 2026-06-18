@@ -16,6 +16,28 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (targetId === 'dashboard') fetchJobs();
         if (targetId === 'profile') fetchProfile();
     });
+}
+
+// Danger Zone Reset
+async function resetData() {
+    if (!confirm("Are you sure you want to delete all jobs, profiles, and preferences? This cannot be undone.")) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/reset`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert("All data has been cleared. The app is completely fresh!");
+            window.location.reload();
+        } else {
+            alert("Failed to clear data.");
+        }
+    } catch (err) {
+        alert("Error connecting to server.");
+    }
 });
 
 // Fetch Jobs
