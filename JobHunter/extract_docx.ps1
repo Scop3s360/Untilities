@@ -1,13 +1,17 @@
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$docxPath = "d:\Projects\Utilities\Job_Hutn\James_Lock_Final_Infrastructure_CV.docx"
-$extractPath = "d:\Projects\Utilities\Job_Hutn\temp_cv_extract"
+$docxPath = ".\James_Lock_Final_Infrastructure_CV.docx"
+$extractPath = ".\temp_cv_extract"
 
-if (Test-Path $extractPath) { Remove-Item -Recurse -Force $extractPath }
-[System.IO.Compression.ZipFile]::ExtractToDirectory($docxPath, $extractPath)
+# Expand the docx file (which is a ZIP archive)
+Expand-Archive -Path $docxPath -DestinationPath $extractPath -Force
 
-$xmlContent = Get-Content -Path "$extractPath\word\document.xml" -Raw
-$text = [regex]::Matches($xmlContent, '<w:t[^>]*>(.*?)</w:t>') | ForEach-Object { $_.Groups[1].Value }
+# Read the document.xml file
+[xml]$doc = Get-Content "$extractPath\word\document.xml"
 
-$text -join " " | Out-File "d:\Projects\Utilities\Job_Hutn\cv_text.txt"
+# Extract all text nodes
+$text = $doc.SelectNodes("//w:t") | ForEach-Object { $_.InnerText }
+
+# Join the text with spaces and output to a file
+$text -join " " | Out-File ".\cv_text.txt"
 Remove-Item -Recurse -Force $extractPath
 Write-Host "Extracted text to cv_text.txt"
