@@ -53,12 +53,14 @@ class ReedScraper(JobSource):
                     full_url = self.BASE_URL + href if href.startswith('/') else href
                     job_urls.append(full_url)
                     
-        # Let's fallback to finding any link with '/jobs/' and an ID if structure changed
+        # Let's fallback to finding any link with '/jobs/' and a numeric ID if structure changed
         if not job_urls:
+            import re
             for a in soup.find_all('a', href=True):
                 href = a['href']
-                # Reed job links usually end with /jobs/[title]/[id]
-                if '/jobs/' in href and not href.endswith('/jobs'):
+                path = urllib.parse.urlparse(href).path
+                # Real Reed job links end with a 6-9 digit number (the job ID)
+                if '/jobs/' in path and re.search(r'/\d{6,9}$', path):
                     full_url = self.BASE_URL + href if href.startswith('/') else href
                     if full_url not in job_urls:
                         job_urls.append(full_url)
