@@ -87,6 +87,37 @@ document.getElementById('trigger-scrape-btn').addEventListener('click', async (e
     }
 });
 
+// Export Jobs to CSV
+document.getElementById('export-jobs-btn').addEventListener('click', async () => {
+    try {
+        const response = await fetch(`${API_URL}/jobs`);
+        const jobs = await response.json();
+        if (jobs.length === 0) return alert("No jobs to export! Try triggering a scrape first.");
+        
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Job Title,Company,Location,Salary,URL\n";
+        
+        jobs.forEach(job => {
+            const title = `"${(job.title || '').replace(/"/g, '""')}"`;
+            const company = `"${(job.company || '').replace(/"/g, '""')}"`;
+            const location = `"${(job.location || 'Remote').replace(/"/g, '""')}"`;
+            const salary = `"${job.salary_max ? '£' + job.salary_max : 'Unspecified'}"`;
+            const url = `"${job.url || ''}"`;
+            csvContent += `${title},${company},${location},${salary},${url}\n`;
+        });
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "job_hunter_matches.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (err) {
+        alert("Failed to export jobs: " + err.message);
+    }
+});
+
 // Parse CV
 document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();

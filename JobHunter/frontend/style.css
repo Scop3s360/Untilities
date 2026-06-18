@@ -154,6 +154,24 @@ nav {
     transform: translateY(-2px);
 }
 
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid var(--glass-border);
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
 .pulse {
     animation: pulse 2s infinite;
 }
