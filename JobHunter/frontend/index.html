@@ -51,8 +51,8 @@
                 <div class="profile-card glass-panel-inner">
                     <form id="profile-form">
                         <div class="form-group">
-                            <label>Raw CV Text</label>
-                            <textarea id="cv-text" rows="8" placeholder="Paste your CV here..."></textarea>
+                            <label>Upload CV (.docx or .txt)</label>
+                            <input type="file" id="cv-file" accept=".docx,.txt" class="file-input" />
                         </div>
                         <button type="submit" id="parse-cv-btn" class="primary-btn">Parse CV & Update Profile</button>
                     </form>

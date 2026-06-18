@@ -1,9 +1,14 @@
 import logging
 import os
-from fastapi import FastAPI, Depends, HTTPException
+from dotenv import load_dotenv
+load_dotenv()
+
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+import io
+import docx2txt
 from .core import models
 from .core.database import engine, get_db
 from .core.scheduler import start_scheduler
@@ -84,6 +89,47 @@ async def parse_cv(cv_data: dict, db: Session = Depends(get_db)):
     if not cv_text:
         raise HTTPException(status_code=400, detail="No cv_text provided")
     
+    extracted = await parse_cv_text(cv_text)
+    
+    # Update profile
+    profile = db.query(models.CandidateProfile).first()
+    if not profile:
+        profile = models.CandidateProfile(name=extracted.name)
+        db.add(profile)
+        
+    profile.skills = extracted.skills
+    profile.years_experience = extracted.years_experience
+    profile.industries = extracted.industries
+    profile.certifications = extracted.certifications
+    profile.clearance_status = extracted.clearance_level
+    profile.cv_text = cv_text
+    
+    db.commit()
+    db.refresh(profile)
+    return {"status": "success", "profile": profile}
+
+@app.post("/upload-cv")
+async def upload_cv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Accepts a .docx or .txt file, extracts text, and parses profile."""
+    from .core.cv_parser import parse_cv_text
+    
+    content = await file.read()
+    
+    cv_text = ""
+    if file.filename.endswith(".docx"):
+        try:
+            cv_text = docx2txt.process(io.BytesIO(content))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to read .docx file: {str(e)}")
+    elif file.filename.endswith(".txt"):
+        cv_text = content.decode("utf-8", errors="ignore")
+    else:
+        raise HTTPException(status_code=400, detail="Only .docx and .txt files are supported.")
+        
+    if not cv_text.strip():
+        raise HTTPException(status_code=400, detail="The file appears to be empty or unreadable.")
+
+    # Parse using existing AI logic
     extracted = await parse_cv_text(cv_text)
     
     # Update profile

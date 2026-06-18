@@ -91,18 +91,21 @@ document.getElementById('trigger-scrape-btn').addEventListener('click', async (e
 document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('parse-cv-btn');
-    const text = document.getElementById('cv-text').value;
+    const fileInput = document.getElementById('cv-file');
+    const file = fileInput.files[0];
     
-    if (!text) return alert("Please paste CV text first.");
+    if (!file) return alert("Please select a CV file first.");
 
-    btn.innerText = 'Parsing with AI...';
+    btn.innerText = 'Parsing & Updating...';
     btn.disabled = true;
 
     try {
-        const response = await fetch(`${API_URL}/parse-cv`, {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(`${API_URL}/upload-cv`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cv_text: text })
+            body: formData
         });
         
         if (response.ok) {
