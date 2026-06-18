@@ -32,9 +32,22 @@ async function fetchJobs() {
             return;
         }
 
-        grid.innerHTML = jobs.map(job => `
+        grid.innerHTML = jobs.map(job => {
+            let badgeClass = 'badge-grey';
+            let badgeText = 'No Match Data';
+            if (job.match_score !== undefined) {
+                if (job.match_score >= 70) badgeClass = 'badge-green';
+                else if (job.match_score >= 40) badgeClass = 'badge-yellow';
+                else badgeClass = 'badge-red';
+                badgeText = `🔥 ${job.match_score}% Match`;
+            }
+
+            return `
             <div class="job-card">
-                <h3>${job.title}</h3>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                    <h3 style="margin-bottom: 0;">${job.title}</h3>
+                    <span class="score-badge ${badgeClass}">${badgeText}</span>
+                </div>
                 <div class="company">${job.company}</div>
                 <div class="details">
                     <span>📍 ${job.location || 'Remote'}</span>
@@ -46,7 +59,7 @@ async function fetchJobs() {
                     <a href="${job.url}" target="_blank" class="job-link">View Job</a>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } catch (err) {
         grid.innerHTML = `<p style="color:red">Failed to load jobs: ${err.message}</p>`;
     }
@@ -59,9 +72,14 @@ async function fetchProfile() {
         if (response.ok) {
             const profile = await response.json();
             document.getElementById('profile-details').classList.remove('hidden');
+            document.getElementById('preferences-section').classList.remove('hidden');
             document.getElementById('p-name').innerText = profile.name || 'N/A';
             document.getElementById('p-skills').innerText = profile.skills ? profile.skills.join(', ') : 'N/A';
             document.getElementById('p-clearance').innerText = profile.clearance_status || 'N/A';
+            
+            document.getElementById('pref-salary-min').value = profile.salary_minimum || '';
+            document.getElementById('pref-salary-ideal').value = profile.salary_ideal || '';
+            document.getElementById('pref-remote').value = profile.remote_preference || 'Any';
         }
     } catch (err) {
         console.log("No profile found or error fetching profile");
@@ -152,6 +170,34 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
         btn.innerText = 'Parse CV & Update Profile';
         btn.disabled = false;
     }
+});
+
+// Save Preferences
+document.getElementById('preferences-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('save-prefs-btn');
+    btn.innerText = "Saving...";
+    
+    const payload = {
+        salary_minimum: parseInt(document.getElementById('pref-salary-min').value) || null,
+        salary_ideal: parseInt(document.getElementById('pref-salary-ideal').value) || null,
+        remote_preference: document.getElementById('pref-remote').value
+    };
+
+    try {
+        const response = await fetch(`${API_URL}/profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+            alert("Preferences saved! The Dashboard will now rank jobs based on these new settings.");
+            fetchJobs(); // Re-rank immediately
+        }
+    } catch (err) {
+        alert("Failed to save preferences.");
+    }
+    btn.innerText = "Save Preferences";
 });
 
 // Initial load

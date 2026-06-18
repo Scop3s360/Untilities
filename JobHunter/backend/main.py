@@ -70,8 +70,22 @@ def get_applications(db: Session = Depends(get_db)):
 
 @app.get("/jobs")
 def get_jobs(db: Session = Depends(get_db)):
+    from .core.scoring import calculate_match_score
     jobs = db.query(models.Job).all()
-    return jobs
+    profile = db.query(models.CandidateProfile).first()
+    
+    if not profile:
+        return jobs
+        
+    scored_jobs = []
+    for job in jobs:
+        score = calculate_match_score(job, profile)
+        job_dict = {c.name: getattr(job, c.name) for c in job.__table__.columns}
+        job_dict["match_score"] = round(score, 1)
+        scored_jobs.append(job_dict)
+        
+    scored_jobs.sort(key=lambda x: x.get("match_score", 0), reverse=True)
+    return scored_jobs
 
 @app.post("/trigger-scrape")
 async def trigger_scrape():
