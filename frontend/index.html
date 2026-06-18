@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Hunter AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="app-container glass-panel">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>Job Hunter <span>AI</span></h1>
+            </div>
+            <nav>
+                <button class="nav-btn active" data-target="dashboard">Dashboard</button>
+                <button class="nav-btn" data-target="profile">My Profile</button>
+                <button class="nav-btn" data-target="applications">Applications</button>
+            </nav>
+            <div class="actions">
+                <button id="trigger-scrape-btn" class="primary-btn pulse">Trigger Scrape</button>
+            </div>
+        </aside>
+
+        <main class="content">
+            <!-- Dashboard View -->
+            <section id="dashboard" class="view active">
+                <header>
+                    <h2>Discovered Jobs</h2>
+                    <p>AI-matched opportunities based on your profile.</p>
+                </header>
+                <div class="job-grid" id="job-grid">
+                    <div class="loader">Loading jobs...</div>
+                </div>
+            </section>
+
+            <!-- Profile View -->
+            <section id="profile" class="view">
+                <header>
+                    <h2>My Profile</h2>
+                    <p>Upload your CV text to let the AI extract your skills.</p>
+                </header>
+                <div class="profile-card glass-panel-inner">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label>Raw CV Text</label>
+                            <textarea id="cv-text" rows="8" placeholder="Paste your CV here..."></textarea>
+                        </div>
+                        <button type="submit" id="parse-cv-btn" class="primary-btn">Parse CV & Update Profile</button>
+                    </form>
+                    <div id="profile-details" class="profile-details hidden">
+                        <h3>Extracted Details</h3>
+                        <p><strong>Name:</strong> <span id="p-name"></span></p>
+                        <p><strong>Skills:</strong> <span id="p-skills"></span></p>
+                        <p><strong>Clearance:</strong> <span id="p-clearance"></span></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Applications View -->
+            <section id="applications" class="view">
+                <header>
+                    <h2>Applications</h2>
+                    <p>Track your pipeline.</p>
+                </header>
+                <div class="kanban-board">
+                    <div class="kanban-col">
+                        <h3>Applied</h3>
+                        <div class="kanban-items"></div>
+                    </div>
+                    <div class="kanban-col">
+                        <h3>Interviewing</h3>
+                        <div class="kanban-items"></div>
+                    </div>
+                    <div class="kanban-col">
+                        <h3>Offers</h3>
+                        <div class="kanban-items"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Hunter AI - Application Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --surface-color: rgba(31, 40, 51, 0.5);
+            --primary-accent: #66fcf1;
+            --secondary-accent: #45a29e;
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
+            --danger-color: #F44336;
+            --text-main: #c5c6c7;
+            --text-light: #ffffff;
+            --card-bg: rgba(20, 25, 32, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(102, 252, 241, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(69, 162, 158, 0.05) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
+        }
+
+        h1 {
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 2rem;
+            text-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: right;
+        }
+
+        .stat-value {
+            color: var(--primary-accent);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            min-height: calc(100vh - 150px);
+        }
+
+        .kanban-column {
+            flex: 1;
+            min-width: 300px;
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 1rem;
+            border: 1px solid rgba(197, 198, 199, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .badge {
+            background: rgba(102, 252, 241, 0.1);
+            color: var(--primary-accent);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .kanban-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(102, 252, 241, 0.15);
+            border-radius: 12px;
+            padding: 1.2rem;
+            cursor: grab;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .kanban-card:active {
+            cursor: grabbing;
+        }
+
+        .kanban-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(102, 252, 241, 0.15);
+            border-color: var(--primary-accent);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .job-title {
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .score {
+            color: var(--success-color);
+            font-weight: 700;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .company {
+            color: var(--secondary-accent);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(197, 198, 199, 0.1);
+            padding-bottom: 0.3rem;
+        }
+
+        .tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(197, 198, 199, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        /* Drag and Drop styles */
+        .kanban-card.dragging {
+            opacity: 0.5;
+        }
+        
+        .kanban-column.drag-over {
+            background: rgba(102, 252, 241, 0.05);
+            border-color: rgba(102, 252, 241, 0.5);
+            border-style: dashed;
+        }
+
+        /* Specific Column Accents */
+        .col-discovered .badge { color: var(--text-main); background: rgba(197, 198, 199, 0.1); }
+        .col-applied .badge { color: #2196F3; background: rgba(33, 150, 243, 0.1); }
+        .col-interview .badge { color: var(--warning-color); background: rgba(255, 193, 7, 0.1); }
+        .col-offer .badge { color: var(--success-color); background: rgba(76, 175, 80, 0.1); }
+        .col-rejected .badge { color: var(--danger-color); background: rgba(244, 67, 54, 0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Application Tracker</h1>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">24</div>
+                <div class="stat-label">Discovered</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Active Apps</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Interviews</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="kanban-board">
+        <!-- Discovered -->
+        <div class="kanban-column col-discovered" data-status="discovered">
+            <div class="column-header">
+                <span>Discovered</span>
+                <span class="badge count-badge">3</span>
+            </div>
+            
+            <div class="kanban-card" draggable="true">
+                <div class="card-header">
+                    <div class="job-title">Cloud Infrastructure Engineer</div>
+                    <div class="score">94/100</div>
+                </div>
+                <div class="company">Tech Solutions Ltd</div>
+                <div class="card-details">
+                    <div class="detail-row"><span>Salary</span><span>£60k - £65k</span></div>
+                    <div class="detail-row"><span>Location</span><span>Cambridge (45m)</span></div>
+                    <div class="detail-row"><span>Model</span><span>Hybrid</span></div>
+                </div>
+                <div class="tags">
+                    <span class="tag">AWS</span><span class="tag">Linux</span><span class="tag">Python</span>
+                </div>
+            </div>
+
+            <div class="kanban-card" draggable="true">
+                <div class="card-header">
+                    <div class="job-title">Senior Systems Operations</div>
+                    <div class="score">89/100</div>
+                </div>
+                <div class="company">National Security Contractor</div>
+                <div class="card-details">
+                    <div class="detail-row"><span>Salary</span><span>£70k</span></div>
+                    <div class="detail-row"><span>Location</span><span>Milton Keynes (1h10m)</span></div>
+                    <div class="detail-row"><span>Clearance</span><span>Expired DV 👍</span></div>
+                </div>
+                <div class="tags">
+                    <span class="tag">AWS</span><span class="tag">High Salary Edge Case</span>
+                </div>
+            </div>
+
+            <div class="kanban-card" draggable="true">
+                <div class="card-header">
+                    <div class="job-title">IT Operations Lead</div>
+                    <div class="score">85/100</div>
+                </div>
+                <div class="company">Logistics Network</div>
+                <div class="card-details">
+                    <div class="detail-row"><span>Salary</span><span>£48k</span></div>
+                    <div class="detail-row"><span>Location</span><span>Peterborough (15m)</span></div>
+                </div>
+                <div class="tags">
+                    <span class="tag">Logistics Exp.</span><span class="tag">Local</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applied -->
+        <div class="kanban-column col-applied" data-status="applied">
+            <div class="column-header">
+                <span>Applied</span>
+                <span class="badge count-badge">1</span>
+            </div>
+            
+            <div class="kanban-card" draggable="true">
+                <div class="card-header">
+                    <div class="job-title">DevOps Engineer</div>
+                    <div class="score">82/100</div>
+                </div>
+                <div class="company">Aerospace Dynamics</div>
+                <div class="card-details">
+                    <div class="detail-row"><span>Salary</span><span>£60k</span></div>
+                    <div class="detail-row"><span>Location</span><span>Remote</span></div>
+                    <div class="detail-row"><span>Applied</span><span>2 days ago</span></div>
+                </div>
+                <div class="tags">
+                    <span class="tag">Remote</span><span class="tag">Defence</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interviewing -->
+        <div class="kanban-column col-interview" data-status="interview">
+            <div class="column-header">
+                <span>Interviewing</span>
+                <span class="badge count-badge">1</span>
+            </div>
+            
+            <div class="kanban-card" draggable="true" style="border-color: var(--warning-color);">
+                <div class="card-header">
+                    <div class="job-title">Platform Engineer</div>
+                    <div class="score">88/100</div>
+                </div>
+                <div class="company">FinTech Startup</div>
+                <div class="card-details">
+                    <div class="detail-row"><span>Salary</span><span>£80k</span></div>
+                    <div class="detail-row"><span>Location</span><span>Remote</span></div>
+                    <div class="detail-row" style="color: var(--warning-color);"><span>Next</span><span>Tech Test - Thurs 2PM</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Offer -->
+        <div class="kanban-column col-offer" data-status="offer">
+            <div class="column-header">
+                <span>Offer</span>
+                <span class="badge count-badge">0</span>
+            </div>
+        </div>
+
+        <!-- Rejected -->
+        <div class="kanban-column col-rejected" data-status="rejected">
+            <div class="column-header">
+                <span>Rejected</span>
+                <span class="badge count-badge">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple Drag and Drop functionality
+        const cards = document.querySelectorAll('.kanban-card');
+        const columns = document.querySelectorAll('.kanban-column');
+
+        cards.forEach(card => {
+            card.addEventListener('dragstart', () => {
+                card.classList.add('dragging');
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging');
+                updateCounts();
+            });
+        });
+
+        columns.forEach(column => {
+            column.addEventListener('dragover', e => {
+                e.preventDefault();
+                column.classList.add('drag-over');
+                const afterElement = getDragAfterElement(column, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (afterElement == null) {
+                    column.appendChild(dragging);
+                } else {
+                    column.insertBefore(dragging, afterElement);
+                }
+            });
+
+            column.addEventListener('dragleave', () => {
+                column.classList.remove('drag-over');
+            });
+
+            column.addEventListener('drop', () => {
+                column.classList.remove('drag-over');
+            });
+        });
+
+        function getDragAfterElement(column, y) {
+            const draggableElements = [...column.querySelectorAll('.kanban-card:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function updateCounts() {
+            columns.forEach(col => {
+                const count = col.querySelectorAll('.kanban-card').length;
+                col.querySelector('.count-badge').textContent = count;
+            });
+        }
+    </script>
+</body>
+</html>

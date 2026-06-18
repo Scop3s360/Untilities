@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Hunter AI - Profile Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --surface-color: rgba(31, 40, 51, 0.6);
+            --primary-accent: #66fcf1;
+            --secondary-accent: #45a29e;
+            --text-main: #c5c6c7;
+            --text-light: #ffffff;
+            --error-color: #ff4b4b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(102, 252, 241, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(69, 162, 158, 0.08) 0%, transparent 50%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            perspective: 1000px;
+        }
+
+        .glass-panel {
+            background: var(--surface-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 
+                        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            transform-style: preserve-3d;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            transform: translateZ(20px);
+        }
+
+        h1 {
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 2.5rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(102, 252, 241, 0.3);
+        }
+
+        p.subtitle {
+            color: var(--secondary-accent);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            transform: translateZ(10px);
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            transition: color 0.3s ease;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(11, 12, 16, 0.6);
+            border: 1px solid rgba(197, 198, 199, 0.2);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(102, 252, 241, 0.15);
+            background: rgba(11, 12, 16, 0.9);
+        }
+
+        input:focus + label, select:focus + label {
+            color: var(--primary-accent);
+        }
+
+        /* Number Input specific styles */
+        .currency-wrap {
+            position: relative;
+        }
+        
+        .currency-wrap::before {
+            content: '£';
+            position: absolute;
+            left: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-main);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .currency-wrap input {
+            padding-left: 2.5rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1.2rem;
+            margin-top: 1.5rem;
+            background: linear-gradient(135deg, var(--secondary-accent) 0%, var(--primary-accent) 100%);
+            border: none;
+            border-radius: 12px;
+            color: var(--bg-color);
+            font-weight: 700;
+            font-size: 1.1rem;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform: translateZ(20px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 20px -5px rgba(102, 252, 241, 0.4);
+        }
+
+        .btn-submit::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(45deg) translateY(100%);
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .btn-submit:hover {
+            transform: translateZ(25px) translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(102, 252, 241, 0.6);
+        }
+
+        .btn-submit:hover::after {
+            transform: rotate(45deg) translateY(-100%);
+        }
+
+        .btn-submit:active {
+            transform: translateZ(15px) translateY(1px);
+        }
+
+        .success-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(11, 12, 16, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            z-index: 100;
+        }
+
+        .success-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            color: var(--primary-accent);
+            margin-bottom: 1rem;
+            transform: scale(0);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s;
+        }
+
+        .success-overlay.active .success-icon {
+            transform: scale(1);
+        }
+
+        .success-text {
+            color: var(--text-light);
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="glass-panel">
+            <div class="header">
+                <h1>Job Hunter AI</h1>
+                <p class="subtitle">Complete your candidate profile</p>
+            </div>
+
+            <form id="profileForm">
+                <div class="form-group">
+                    <label for="minSalary">Minimum Salary</label>
+                    <div class="currency-wrap">
+                        <input type="number" id="minSalary" placeholder="e.g. 65000" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="idealSalary">Ideal Salary</label>
+                    <div class="currency-wrap">
+                        <input type="number" id="idealSalary" placeholder="e.g. 85000" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="commute">Maximum Commute (Minutes from Peterborough)</label>
+                    <input type="number" id="commute" placeholder="e.g. 45" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="workModel">Preferred Working Model</label>
+                    <select id="workModel" required>
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="Remote">Fully Remote</option>
+                        <option value="Hybrid">Hybrid (1-3 days onsite)</option>
+                        <option value="Onsite">Onsite</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="clearance">Security Clearance</label>
+                    <select id="clearance" required>
+                        <option value="None">None</option>
+                        <option value="SC">SC (Security Check)</option>
+                        <option value="DV">DV (Developed Vetting)</option>
+                        <option value="CTC">CTC (Counter Terrorist Check)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit">Save Preferences</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-icon">✓</div>
+        <div class="success-text">Profile Updated Successfully<br><span style="font-size: 1rem; color: var(--secondary-accent); font-weight: 300;">I will now use these preferences to filter and rank your daily digest!</span></div>
+    </div>
+
+    <script>
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect data (in the real app, we'd send this to the FastAPI backend)
+            const formData = {
+                minSalary: document.getElementById('minSalary').value,
+                idealSalary: document.getElementById('idealSalary').value,
+                commute: document.getElementById('commute').value,
+                workModel: document.getElementById('workModel').value,
+                clearance: document.getElementById('clearance').value
+            };
+            
+            console.log('Saved Profile Data:', formData);
+
+            // Show success animation
+            const overlay = document.getElementById('successOverlay');
+            overlay.classList.add('active');
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 3000);
+        });
+
+        // Add slight 3D tilt effect to the panel on mousemove
+        const panel = document.querySelector('.glass-panel');
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 50;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
+            panel.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+        
+        // Reset transform on mouse leave
+        document.addEventListener('mouseleave', () => {
+            panel.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+    </script>
+</body>
+</html>
