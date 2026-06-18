@@ -15,13 +15,13 @@ class IndeedScraper(JobSource):
     """
     BASE_URL = "https://uk.indeed.com"
 
-    async def search(self, keywords: str, location: str) -> List[str]:
+    async def search(self, keywords: str, location: str, radius: int = 10) -> List[str]:
         """
         Search for jobs and return a list of URLs using Playwright.
         """
         encoded_keywords = urllib.parse.quote(keywords)
         encoded_location = urllib.parse.quote(location)
-        url = f"{self.BASE_URL}/jobs?q={encoded_keywords}&l={encoded_location}"
+        url = f"{self.BASE_URL}/jobs?q={encoded_keywords}&l={encoded_location}&radius={radius}"
         
         logger.info(f"Searching Indeed for '{keywords}' in '{location}' at {url}")
         

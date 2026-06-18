@@ -22,13 +22,13 @@ class ReedScraper(JobSource):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         })
 
-    async def search(self, keywords: str, location: str) -> List[str]:
+    async def search(self, keywords: str, location: str, radius: int = 10) -> List[str]:
         """
         Search for jobs and return a list of URLs.
         """
         encoded_keywords = keywords.lower().replace(" ", "-")
         encoded_location = location.lower().replace(" ", "-")
-        url = f"{self.BASE_URL}/jobs/{encoded_keywords}-jobs-in-{encoded_location}"
+        url = f"{self.BASE_URL}/jobs/{encoded_keywords}-jobs-in-{encoded_location}?proximity={radius}"
         
         logger.info(f"Searching Reed for '{keywords}' in '{location}' at {url}")
         

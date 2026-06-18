@@ -24,7 +24,7 @@ class JobSource(ABC):
     """
     
     @abstractmethod
-    async def search(self, keywords: str, location: str) -> List[str]:
+    async def search(self, keywords: str, location: str, radius: int = 10) -> List[str]:
         """
         Search for jobs and return a list of URLs or IDs.
         """
@@ -44,11 +44,11 @@ class JobSource(ABC):
         """
         pass
 
-    async def fetch_jobs(self, keywords: str, location: str) -> List[ScrapedJob]:
+    async def fetch_jobs(self, keywords: str, location: str, radius: int = 10) -> List[ScrapedJob]:
         """
         Helper method to perform full pipeline: search -> extract -> normalise.
         """
-        urls = await self.search(keywords, location)
+        urls = await self.search(keywords, location, radius)
         jobs = []
         for url in urls:
             try:

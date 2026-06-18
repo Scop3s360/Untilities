@@ -24,17 +24,19 @@ async def daily_scrape_job():
         
         keywords = "Software Engineer"
         location = "London"
+        radius = 10
         
         if profile and profile.location:
             location = profile.location
+            radius = profile.search_radius or 10
             if profile.preferred_roles and len(profile.preferred_roles) > 0:
                 keywords = profile.preferred_roles[0]
             elif profile.skills and len(profile.skills) > 0:
                 keywords = f"{profile.skills[0]} Developer"
 
         for scraper in scrapers:
-            logger.info(f"Running scraper: {scraper.__class__.__name__} for {keywords} in {location}")
-            jobs = await scraper.fetch_jobs(keywords, location)
+            logger.info(f"Running scraper: {scraper.__class__.__name__} for {keywords} in {location} ({radius} miles)")
+            jobs = await scraper.fetch_jobs(keywords, location, radius)
             for job_data in jobs:
                 # Basic dedup
                 existing = db.query(Job).filter(Job.job_id == job_data.source_id).first()
