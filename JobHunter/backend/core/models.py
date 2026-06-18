@@ -14,6 +14,7 @@ class CandidateProfile(Base):
     salary_minimum = Column(Integer)
     salary_ideal = Column(Integer)
     max_commute_minutes = Column(Integer)
+    search_radius = Column(Integer, default=10)
     remote_preference = Column(String) # Remote, Hybrid, Onsite, Any
     clearance_status = Column(String)
 

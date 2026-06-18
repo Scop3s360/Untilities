@@ -16,13 +16,24 @@ async def daily_scrape_job():
     logger.info("Starting daily job scrape...")
     
     scrapers = [ReedScraper(), IndeedScraper()]
-    keywords = "Software Engineer"
-    location = "London"
     
     db = SessionLocal()
     try:
+        from .models import CandidateProfile
+        profile = db.query(CandidateProfile).first()
+        
+        keywords = "Software Engineer"
+        location = "London"
+        
+        if profile and profile.location:
+            location = profile.location
+            if profile.preferred_roles and len(profile.preferred_roles) > 0:
+                keywords = profile.preferred_roles[0]
+            elif profile.skills and len(profile.skills) > 0:
+                keywords = f"{profile.skills[0]} Developer"
+
         for scraper in scrapers:
-            logger.info(f"Running scraper: {scraper.__class__.__name__}")
+            logger.info(f"Running scraper: {scraper.__class__.__name__} for {keywords} in {location}")
             jobs = await scraper.fetch_jobs(keywords, location)
             for job_data in jobs:
                 # Basic dedup

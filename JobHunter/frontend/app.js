@@ -77,6 +77,8 @@ async function fetchProfile() {
             document.getElementById('p-skills').innerText = profile.skills ? profile.skills.join(', ') : 'N/A';
             document.getElementById('p-clearance').innerText = profile.clearance_status || 'N/A';
             
+            document.getElementById('pref-location').value = profile.location || '';
+            document.getElementById('pref-radius').value = profile.search_radius || '10';
             document.getElementById('pref-salary-min').value = profile.salary_minimum || '';
             document.getElementById('pref-salary-ideal').value = profile.salary_ideal || '';
             document.getElementById('pref-remote').value = profile.remote_preference || 'Any';
@@ -179,6 +181,8 @@ document.getElementById('preferences-form').addEventListener('submit', async (e)
     btn.innerText = "Saving...";
     
     const payload = {
+        location: document.getElementById('pref-location').value || null,
+        search_radius: parseInt(document.getElementById('pref-radius').value) || 10,
         salary_minimum: parseInt(document.getElementById('pref-salary-min').value) || null,
         salary_ideal: parseInt(document.getElementById('pref-salary-ideal').value) || null,
         remote_preference: document.getElementById('pref-remote').value
