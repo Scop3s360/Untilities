@@ -54,6 +54,8 @@ def get_profile(db: Session = Depends(get_db)):
 def create_or_update_profile(profile_data: dict, db: Session = Depends(get_db)):
     profile = db.query(models.CandidateProfile).first()
     if not profile:
+        if "name" not in profile_data:
+            profile_data["name"] = "Unknown Candidate"
         profile = models.CandidateProfile(**profile_data)
         db.add(profile)
     else:
