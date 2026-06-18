@@ -26,8 +26,8 @@ class ReedScraper(JobSource):
         """
         Search for jobs and return a list of URLs.
         """
-        encoded_keywords = urllib.parse.quote(keywords)
-        encoded_location = urllib.parse.quote(location)
+        encoded_keywords = keywords.lower().replace(" ", "-")
+        encoded_location = location.lower().replace(" ", "-")
         url = f"{self.BASE_URL}/jobs/{encoded_keywords}-jobs-in-{encoded_location}"
         
         logger.info(f"Searching Reed for '{keywords}' in '{location}' at {url}")
