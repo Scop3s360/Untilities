@@ -2,18 +2,22 @@ namespace SaverSearch.Application.Common.Models;
 
 public class PaginatedList<T>
 {
-    public IEnumerable<T> Items { get; }
-    public int CurrentPage { get; }
-    public int PageSize { get; }
-    public int TotalCount { get; }
-    public int TotalPages { get; }
+    public IEnumerable<T> Items { get; set; } = Enumerable.Empty<T>();
+    public int CurrentPage { get; set; }
+    public int PageSize { get; set; }
+    public int TotalCount { get; set; }
+    public int TotalPages { get; set; }
 
-    public PaginatedList(IEnumerable<T> items, int count, int pageNumber, int pageSize)
+    public PaginatedList()
     {
-        CurrentPage = pageNumber;
+    }
+
+    public PaginatedList(IEnumerable<T> items, int totalCount, int currentPage, int pageSize)
+    {
+        CurrentPage = currentPage;
         PageSize = pageSize;
-        TotalCount = count;
-        TotalPages = (int)Math.Ceiling(count / (double)pageSize);
+        TotalCount = totalCount;
+        TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
         Items = items;
     }
 }

@@ -13,19 +13,22 @@ using SaverSearch.Infrastructure.Persistence.Contexts;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add API layer services (Controllers with customized model validation responses)
-builder.Services.AddControllers()
-    .ConfigureApiBehaviorOptions(options =>
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
     {
-        options.InvalidModelStateResponseFactory = context =>
-        {
-            var errors = context.ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage);
+        var errors = context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage);
 
-            var response = ApiResponse<object>.ErrorResponse("Validation failed.", errors);
-            return new BadRequestObjectResult(response);
-        };
-    });
+        var response = ApiResponse<object>.ErrorResponse("Validation failed.", errors);
+        return new BadRequestObjectResult(response);
+    };
+});
 
 builder.Services.AddEndpointsApiExplorer();
 

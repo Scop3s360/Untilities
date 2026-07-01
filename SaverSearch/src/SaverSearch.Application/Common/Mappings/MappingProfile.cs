@@ -10,27 +10,27 @@ public class MappingProfile : Profile
     {
         // Category
         CreateMap<Category, CategoryDto>();
-        CreateMap<CreateCategoryDto, Category>();
-        CreateMap<UpdateCategoryDto, Category>();
+        CreateMap<CreateCategoryDto, Category>(MemberList.None);
+        CreateMap<UpdateCategoryDto, Category>(MemberList.None);
 
         // Retailer
         CreateMap<Retailer, RetailerDto>();
-        CreateMap<CreateRetailerDto, Retailer>();
-        CreateMap<UpdateRetailerDto, Retailer>();
+        CreateMap<CreateRetailerDto, Retailer>(MemberList.None);
+        CreateMap<UpdateRetailerDto, Retailer>(MemberList.None);
 
         // Provider
         CreateMap<Provider, ProviderDto>();
-        CreateMap<CreateProviderDto, Provider>();
-        CreateMap<UpdateProviderDto, Provider>();
+        CreateMap<CreateProviderDto, Provider>(MemberList.None);
+        CreateMap<UpdateProviderDto, Provider>(MemberList.None);
 
         // OfferType
         CreateMap<OfferType, OfferTypeDto>();
-        CreateMap<CreateOfferTypeDto, OfferType>();
-        CreateMap<UpdateOfferTypeDto, OfferType>();
+        CreateMap<CreateOfferTypeDto, OfferType>(MemberList.None);
+        CreateMap<UpdateOfferTypeDto, OfferType>(MemberList.None);
 
         // Offer
         CreateMap<Offer, OfferDto>();
-        CreateMap<CreateOfferDto, Offer>();
-        CreateMap<UpdateOfferDto, Offer>();
+        CreateMap<CreateOfferDto, Offer>(MemberList.None);
+        CreateMap<UpdateOfferDto, Offer>(MemberList.None);
     }
 }
