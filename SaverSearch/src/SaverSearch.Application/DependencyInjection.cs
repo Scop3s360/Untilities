@@ -24,11 +24,13 @@ public static class DependencyInjection
         {
             services.Configure<ConfidenceSettings>(configuration.GetSection("ConfidenceSettings"));
             services.Configure<SaverSearch.Application.Common.Models.Pipeline.Normalisation.NormalisationSettings>(configuration.GetSection("NormalisationSettings"));
+            services.Configure<SaverSearch.Application.Common.Models.Pipeline.Ranking.RankingSettings>(configuration.GetSection("RankingSettings"));
         }
         else
         {
             services.Configure<ConfidenceSettings>(_ => {});
             services.Configure<SaverSearch.Application.Common.Models.Pipeline.Normalisation.NormalisationSettings>(_ => {});
+            services.Configure<SaverSearch.Application.Common.Models.Pipeline.Ranking.RankingSettings>(_ => {});
         }
 
         // Register FluentValidation validators
@@ -95,6 +97,25 @@ public static class DependencyInjection
         foreach (var type in normStrategyTypes)
         {
             services.AddScoped(typeof(INormalisationStrategy), type);
+        }
+
+        // Register Ranking Engine, Strategies & Factors
+        services.AddScoped<IRankingEngine, SaverSearch.Application.Services.Pipeline.RankingEngine>();
+
+        var rankStrategyTypes = assembly.GetTypes()
+            .Where(t => typeof(IRankingStrategy).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in rankStrategyTypes)
+        {
+            services.AddScoped(typeof(IRankingStrategy), type);
+        }
+
+        var scoringFactorTypes = assembly.GetTypes()
+            .Where(t => typeof(IScoringFactor).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in scoringFactorTypes)
+        {
+            services.AddScoped(typeof(IScoringFactor), type);
         }
 
         return services;
