@@ -10,6 +10,7 @@ public interface ISaverSearchDbContext
     DbSet<Provider> Providers { get; }
     DbSet<OfferType> OfferTypes { get; }
     DbSet<Offer> Offers { get; }
+    DbSet<ImportJobRecord> ImportJobs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

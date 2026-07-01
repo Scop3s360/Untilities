@@ -38,6 +38,11 @@ public class OfferConfiguration : IEntityTypeConfiguration<Offer>
             .IsRequired()
             .HasMaxLength(1000);
 
+        builder.Property(o => o.ExternalId)
+            .HasMaxLength(500);
+
+        builder.HasIndex(o => new { o.ProviderId, o.ExternalId });
+
         builder.Property(o => o.IsExclusive)
             .HasDefaultValue(false);
 

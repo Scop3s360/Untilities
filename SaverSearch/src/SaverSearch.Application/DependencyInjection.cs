@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SaverSearch.Application.Common.Interfaces;
+using SaverSearch.Application.Common.Interfaces.Acquisition;
 using SaverSearch.Application.Common.Models.Pipeline;
 using SaverSearch.Application.Services;
 
@@ -42,6 +43,16 @@ public static class DependencyInjection
         services.AddScoped<IProviderService, ProviderService>();
         services.AddScoped<IOfferTypeService, OfferTypeService>();
         services.AddScoped<IOfferService, OfferService>();
+
+        // Register Discovery Service
+        services.AddScoped<IDiscoveryService, DiscoveryService>();
+
+        // Register Offer Acquisition Framework services
+        services.AddScoped<IOfferAcquisitionEngine, SaverSearch.Application.Services.Acquisition.OfferAcquisitionEngine>();
+        services.AddScoped<IOfferValidationService, SaverSearch.Application.Services.Acquisition.OfferValidationService>();
+        services.AddScoped<IOfferNormalisationService, SaverSearch.Application.Services.Acquisition.OfferNormalisationService>();
+        services.AddScoped<IOfferUpsertService, SaverSearch.Application.Services.Acquisition.OfferUpsertService>();
+        services.AddScoped<IImportJobService, SaverSearch.Application.Services.Acquisition.ImportJobService>();
 
         // Register Offer Discovery Pipeline & Stages
         services.AddScoped<IOfferDiscoveryPipeline, SaverSearch.Application.Services.Pipeline.OfferDiscoveryPipeline>();

@@ -16,6 +16,7 @@ public class Offer
     public DateTime? EndDate { get; set; }
     public string? Terms { get; set; }
     public required string OfferUrl { get; set; }
+    public string? ExternalId { get; set; }
     public bool IsExclusive { get; set; } = false;
     public bool IsActive { get; set; } = true;
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
