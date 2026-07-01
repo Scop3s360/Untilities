@@ -78,7 +78,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // Add Application layer services
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 
 // Add Infrastructure layer services (DB, caching, scrapers, notifications)
 builder.Services.AddInfrastructureServices(builder.Configuration);

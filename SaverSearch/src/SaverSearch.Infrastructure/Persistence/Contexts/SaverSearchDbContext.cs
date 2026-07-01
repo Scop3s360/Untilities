@@ -16,6 +16,7 @@ public class SaverSearchDbContext : DbContext, ISaverSearchDbContext
     public DbSet<Provider> Providers => Set<Provider>();
     public DbSet<OfferType> OfferTypes => Set<OfferType>();
     public DbSet<Offer> Offers => Set<Offer>();
+    public DbSet<RetailerAlias> RetailerAliases => Set<RetailerAlias>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

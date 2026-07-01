@@ -15,4 +15,5 @@ public class Retailer
     // Navigation properties
     public Category Category { get; set; } = null!;
     public ICollection<Offer> Offers { get; set; } = new List<Offer>();
+    public ICollection<RetailerAlias> Aliases { get; set; } = new List<RetailerAlias>();
 }

@@ -36,5 +36,36 @@ public class RetailerConfiguration : IEntityTypeConfiguration<Retailer>
 
         builder.Property(r => r.UpdatedDate)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        // Seed default retailers
+        builder.HasData(
+            new Retailer
+            {
+                Id = Guid.Parse("a0f2b3ad-cc52-472e-8390-50d41f3d3281"),
+                Name = "Amazon",
+                Slug = "amazon",
+                Website = "https://amazon.co.uk",
+                CategoryId = Guid.Parse("23a2a3ad-cc52-472e-8390-50d41f3d3281"),
+                IsActive = true
+            },
+            new Retailer
+            {
+                Id = Guid.Parse("c0f2b3ad-cc52-472e-8390-50d41f3d3281"),
+                Name = "Currys",
+                Slug = "currys",
+                Website = "https://currys.co.uk",
+                CategoryId = Guid.Parse("23a2a3ad-cc52-472e-8390-50d41f3d3281"),
+                IsActive = true
+            },
+            new Retailer
+            {
+                Id = Guid.Parse("b0f2b3ad-cc52-472e-8390-50d41f3d3281"),
+                Name = "Argos",
+                Slug = "argos",
+                Website = "https://argos.co.uk",
+                CategoryId = Guid.Parse("23a2a3ad-cc52-472e-8390-50d41f3d3281"),
+                IsActive = true
+            }
+        );
     }
 }
