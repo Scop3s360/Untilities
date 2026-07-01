@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SaverSearch.Api/SaverSearch.Api.csproj" />
+    <Project Path="src/SaverSearch.Application/SaverSearch.Application.csproj" />
+    <Project Path="src/SaverSearch.Domain/SaverSearch.Domain.csproj" />
+    <Project Path="src/SaverSearch.Infrastructure/SaverSearch.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SaverSearch.Tests/SaverSearch.Tests.csproj" />
+  </Folder>
+</Solution>
