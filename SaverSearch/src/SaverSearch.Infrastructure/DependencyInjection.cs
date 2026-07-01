@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SaverSearch.Application.Common.Interfaces;
 using SaverSearch.Infrastructure.Persistence.Contexts;
+using SaverSearch.Infrastructure.Persistence.Repositories;
 using SaverSearch.Infrastructure.Providers.Scrapers;
 using SaverSearch.Infrastructure.Services.Caching;
 using SaverSearch.Infrastructure.Services.Notifications;
@@ -22,6 +23,10 @@ public static class DependencyInjection
 
         services.AddScoped<ISaverSearchDbContext>(provider => 
             provider.GetRequiredService<SaverSearchDbContext>());
+
+        // Register Repositories and Unit of Work
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Register Providers & Services
         services.AddScoped<IOfferScraper, TopCashbackScraper>();
