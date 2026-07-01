@@ -73,6 +73,17 @@ public static class DependencyInjection
             services.AddScoped(typeof(IRuleEvaluator), type);
         }
 
+        // Register Savings Calculator & Strategies
+        services.AddScoped<ISavingsCalculator, SaverSearch.Application.Services.Pipeline.SavingsCalculator>();
+
+        var calcStrategyTypes = assembly.GetTypes()
+            .Where(t => typeof(ISavingsCalculationStrategy).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in calcStrategyTypes)
+        {
+            services.AddScoped(typeof(ISavingsCalculationStrategy), type);
+        }
+
         return services;
     }
 }

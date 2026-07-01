@@ -1,3 +1,4 @@
+using SaverSearch.Application.Common.Models.Pipeline.Calculations;
 using SaverSearch.Application.Dtos;
 
 namespace SaverSearch.Application.Common.Models.Pipeline;
@@ -11,16 +12,6 @@ public record PipelineDiagnostics
 }
 
 public record StageTiming(string StageName, long ElapsedMilliseconds);
-
-public record CalculatedOffer(
-    Guid OfferId,
-    Guid ProviderId,
-    string Title,
-    decimal CalculatedSavingAmount,
-    decimal EffectiveValue,
-    string Explanation,
-    bool RequiresAction
-);
 
 public record OfferStackGroup(
     List<CalculatedOffer> Offers,
