@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SaverSearch.Application.Common.Interfaces;
+using SaverSearch.Application.Common.Models.Pipeline;
 using SaverSearch.Application.Services;
 
 namespace SaverSearch.Application;
@@ -24,6 +25,17 @@ public static class DependencyInjection
         services.AddScoped<IProviderService, ProviderService>();
         services.AddScoped<IOfferTypeService, OfferTypeService>();
         services.AddScoped<IOfferService, OfferService>();
+
+        // Register Offer Discovery Pipeline & Stages
+        services.AddScoped<IOfferDiscoveryPipeline, SaverSearch.Application.Services.Pipeline.OfferDiscoveryPipeline>();
+
+        var stageTypes = assembly.GetTypes()
+            .Where(t => typeof(IPipelineStage).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in stageTypes)
+        {
+            services.AddScoped(typeof(IPipelineStage), type);
+        }
 
         return services;
     }
