@@ -137,6 +137,25 @@ public static class DependencyInjection
             services.AddScoped(typeof(ICompatibilityEvaluator), type);
         }
 
+        // Register Recommendation Engine, Strategies & Evaluators
+        services.AddScoped<IRecommendationEngine, SaverSearch.Application.Services.Pipeline.RecommendationEngine>();
+
+        var recStrategyTypes = assembly.GetTypes()
+            .Where(t => typeof(IRecommendationStrategy).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in recStrategyTypes)
+        {
+            services.AddScoped(typeof(IRecommendationStrategy), type);
+        }
+
+        var riskEvaluatorTypes = assembly.GetTypes()
+            .Where(t => typeof(IRiskEvaluator).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in riskEvaluatorTypes)
+        {
+            services.AddScoped(typeof(IRiskEvaluator), type);
+        }
+
         return services;
     }
 }
