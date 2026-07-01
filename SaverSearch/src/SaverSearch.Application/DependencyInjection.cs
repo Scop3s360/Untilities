@@ -62,6 +62,17 @@ public static class DependencyInjection
             services.AddScoped(typeof(IRetailerResolverStrategy), type);
         }
 
+        // Register Rules Engine & Evaluators
+        services.AddScoped<IRulesEngine, SaverSearch.Application.Services.Pipeline.RulesEngine>();
+
+        var ruleTypes = assembly.GetTypes()
+            .Where(t => typeof(IRuleEvaluator).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in ruleTypes)
+        {
+            services.AddScoped(typeof(IRuleEvaluator), type);
+        }
+
         return services;
     }
 }
