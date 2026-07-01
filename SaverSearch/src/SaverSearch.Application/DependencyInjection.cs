@@ -23,10 +23,12 @@ public static class DependencyInjection
         if (configuration != null)
         {
             services.Configure<ConfidenceSettings>(configuration.GetSection("ConfidenceSettings"));
+            services.Configure<SaverSearch.Application.Common.Models.Pipeline.Normalisation.NormalisationSettings>(configuration.GetSection("NormalisationSettings"));
         }
         else
         {
             services.Configure<ConfidenceSettings>(_ => {});
+            services.Configure<SaverSearch.Application.Common.Models.Pipeline.Normalisation.NormalisationSettings>(_ => {});
         }
 
         // Register FluentValidation validators
@@ -82,6 +84,17 @@ public static class DependencyInjection
         foreach (var type in calcStrategyTypes)
         {
             services.AddScoped(typeof(ISavingsCalculationStrategy), type);
+        }
+
+        // Register Offer Normalisation Engine & Strategies
+        services.AddScoped<IOfferNormalisationEngine, SaverSearch.Application.Services.Pipeline.OfferNormalisationEngine>();
+
+        var normStrategyTypes = assembly.GetTypes()
+            .Where(t => typeof(INormalisationStrategy).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in normStrategyTypes)
+        {
+            services.AddScoped(typeof(INormalisationStrategy), type);
         }
 
         return services;
