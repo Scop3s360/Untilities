@@ -41,6 +41,7 @@ public static class DependencyInjection
 
         // Register Offer Discovery Pipeline & Stages
         services.AddScoped<IOfferDiscoveryPipeline, SaverSearch.Application.Services.Pipeline.OfferDiscoveryPipeline>();
+        services.AddScoped<IOfferResolver, SaverSearch.Application.Services.Pipeline.OfferResolver>();
 
         var stageTypes = assembly.GetTypes()
             .Where(t => typeof(IPipelineStage).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
