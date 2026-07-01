@@ -118,6 +118,25 @@ public static class DependencyInjection
             services.AddScoped(typeof(IScoringFactor), type);
         }
 
+        // Register Purchase Planning Engine, Strategies & Evaluators
+        services.AddScoped<IPurchasePlanningEngine, SaverSearch.Application.Services.Pipeline.PurchasePlanningEngine>();
+
+        var planStrategyTypes = assembly.GetTypes()
+            .Where(t => typeof(IPurchasePlanningStrategy).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in planStrategyTypes)
+        {
+            services.AddScoped(typeof(IPurchasePlanningStrategy), type);
+        }
+
+        var compatEvaluatorTypes = assembly.GetTypes()
+            .Where(t => typeof(ICompatibilityEvaluator).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+        foreach (var type in compatEvaluatorTypes)
+        {
+            services.AddScoped(typeof(ICompatibilityEvaluator), type);
+        }
+
         return services;
     }
 }

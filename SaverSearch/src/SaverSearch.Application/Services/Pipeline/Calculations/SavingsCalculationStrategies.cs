@@ -48,6 +48,9 @@ public class PercentageCashbackStrategy : ISavingsCalculationStrategy
 
         return Task.FromResult(new CalculatedOffer(
             offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             rawSaving,
             finalSaving,
@@ -93,6 +96,9 @@ public class FixedCashbackStrategy : ISavingsCalculationStrategy
 
         return Task.FromResult(new CalculatedOffer(
             offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             rawSaving,
             finalSaving,
@@ -147,6 +153,9 @@ public class PercentageDiscountStrategy : ISavingsCalculationStrategy
 
         return Task.FromResult(new CalculatedOffer(
             offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             rawSaving,
             finalSaving,
@@ -192,6 +201,9 @@ public class FixedDiscountStrategy : ISavingsCalculationStrategy
 
         return Task.FromResult(new CalculatedOffer(
             offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             rawSaving,
             finalSaving,
@@ -243,6 +255,9 @@ public class RewardPointsStrategy : ISavingsCalculationStrategy
 
         return Task.FromResult(new CalculatedOffer(
             offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             rawSaving,
             finalSaving,
@@ -286,6 +301,9 @@ public class MortgageCashbackStrategy : ISavingsCalculationStrategy
 
         return Task.FromResult(new CalculatedOffer(
             offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             rawSaving,
             finalSaving,

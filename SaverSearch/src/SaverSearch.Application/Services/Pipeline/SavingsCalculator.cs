@@ -29,6 +29,9 @@ public class SavingsCalculator(IEnumerable<ISavingsCalculationStrategy> strategi
 
         return new CalculatedOffer(
             resolvedOffer.Offer,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             context.TargetSpend,
             0.0m,
             0.0m,

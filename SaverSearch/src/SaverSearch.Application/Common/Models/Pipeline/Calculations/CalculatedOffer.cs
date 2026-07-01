@@ -13,6 +13,9 @@ public record CalculatedOfferDiagnostics(
 
 public record CalculatedOffer(
     OfferDto Offer,
+    RetailerDto Retailer,
+    ProviderDto Provider,
+    OfferTypeDto OfferType,
     decimal TargetSpend,
     decimal RawSaving,
     decimal FinalSaving,

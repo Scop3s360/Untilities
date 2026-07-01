@@ -105,6 +105,9 @@ public class OfferNormalisationEngineTests
 
         return new CalculatedOffer(
             offerDto,
+            resolvedOffer.Retailer,
+            resolvedOffer.Provider,
+            resolvedOffer.OfferType,
             100.0m,
             calculatedSaving,
             calculatedSaving,

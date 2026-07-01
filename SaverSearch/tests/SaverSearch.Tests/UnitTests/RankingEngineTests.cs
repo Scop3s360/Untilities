@@ -107,6 +107,9 @@ public class RankingEngineTests
 
         var calculated = new CalculatedOffer(
             offerDto,
+            _mapper.Map<RetailerDto>(retailer),
+            _mapper.Map<ProviderDto>(provider),
+            _mapper.Map<OfferTypeDto>(offerType),
             100.0m,
             expectedVal,
             expectedVal,
