@@ -8,4 +8,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/SaverSearch.Tests/SaverSearch.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/SaverSearch.AwinValidation/SaverSearch.AwinValidation.csproj" />
+  </Folder>
 </Solution>

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>awin-validate</AssemblyName>
+    <RootNamespace>SaverSearch.AwinValidation</RootNamespace>
+    <UserSecretsId>saversearch-api-awin-validation-2026</UserSecretsId>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reuse full application stack (connector, engine, persistence) -->
+    <ProjectReference Include="..\..\src\SaverSearch.Infrastructure\SaverSearch.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\SaverSearch.Application\SaverSearch.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>
