@@ -58,7 +58,12 @@ def _import_pdf(filepath: str) -> ImportResult:
     engine  = get_engine()
     inserted, dupes = 0, 0
     for tx in raw_txs:
-        cat = engine.categorise(tx["description"]).category
+        is_credit = tx["credit"] is not None
+        cat = engine.categorise(
+            tx["description"],
+            amount=tx.get("credit") or tx.get("debit"),
+            is_credit=is_credit,
+        ).category
         ok  = db.insert_transaction(
             DB_PATH, stmt_id,
             tx["date"].strftime("%Y-%m-%d"),
@@ -85,7 +90,12 @@ def _import_csv(filepath: str) -> ImportResult:
     engine  = get_engine()
     inserted, dupes = 0, 0
     for tx in txs:
-        cat = engine.categorise(tx["description"]).category
+        is_credit = tx.get("credit") is not None
+        cat = engine.categorise(
+            tx["description"],
+            amount=tx.get("credit") or tx.get("debit"),
+            is_credit=is_credit,
+        ).category
         ok  = db.insert_transaction(
             DB_PATH, stmt_id, tx["date"], tx["description"],
             extract_merchant(tx["description"]), cat,

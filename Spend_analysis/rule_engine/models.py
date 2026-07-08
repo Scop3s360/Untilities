@@ -69,13 +69,21 @@ class CategorizationResult:
     """
     Returned by the engine for every transaction processed.
 
-    Carries enough context for logging / audit without coupling to a
-    specific transaction model.
+    confidence : int  0–100
+        How confident the engine is in this assignment.
+        100 = user rule, 95 = merchant rule, 90 = type rule,
+        80 = keyword rule, 70 = amount heuristic, 0 = default/Other.
+    source : str
+        Which layer produced the result.
+        'user_rule' | 'merchant_rule' | 'type_rule' | 'keyword_rule' |
+        'amount_heuristic' | 'default'
     """
-    description:    str
-    category:       str
-    matched_rule:   Optional[Rule]
-    was_default:    bool           # True when "Other" was assigned (no match)
+    description:   str
+    category:      str
+    matched_rule:  Optional[Rule]
+    was_default:   bool           # True when "Other" was assigned (no match)
+    confidence:    int  = 0       # internal use only — not displayed in UI
+    source:        str  = "default"
 
 
 # ── Internal normalisation helper (also used by the engine) ──────────────────
