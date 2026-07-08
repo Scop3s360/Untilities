@@ -103,6 +103,21 @@ def delete_statement(db_path: Path, stmt_id: int) -> None:
     with _conn(db_path) as con:
         con.execute("DELETE FROM statements WHERE id=?", (stmt_id,))
 
+def clear_all_data(db_path: Path) -> dict:
+    """
+    Delete every statement and transaction (transactions cascade via FK).
+    Categories and rules are in a separate DB and are never touched.
+    Returns counts of what was deleted for confirmation display.
+    """
+    with _conn(db_path) as con:
+        tx_count   = con.execute("SELECT COUNT(*) FROM transactions").fetchone()[0]
+        stmt_count = con.execute("SELECT COUNT(*) FROM statements").fetchone()[0]
+        con.execute("DELETE FROM transactions")
+        con.execute("DELETE FROM statements")
+        # Reset autoincrement counters so IDs start fresh
+        con.execute("DELETE FROM sqlite_sequence WHERE name IN ('transactions','statements')")
+    return {"transactions": tx_count, "statements": stmt_count}
+
 # ── Transaction CRUD ───────────────────────────────────────────────────────────
 
 def insert_transaction(db_path: Path, stmt_id: int, date_str: str,

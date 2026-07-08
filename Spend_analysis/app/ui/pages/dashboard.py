@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                              QScrollArea, QSplitter, QSizePolicy, QFrame)
+                              QScrollArea, QSizePolicy, QFrame,
+                              QPushButton, QMessageBox)
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from app.ui.theme import C
@@ -39,6 +40,14 @@ class DashboardPage(QWidget):
         title.setStyleSheet(f"color:{C['text']};font-size:24px;font-weight:800;")
         hdr.addWidget(title)
         hdr.addStretch()
+
+        clear_btn = QPushButton("Clear Data")
+        clear_btn.setFixedHeight(36)
+        clear_btn.setProperty("danger", True)
+        clear_btn.setToolTip("Delete all imported statements and transactions for a fresh start.\nCategories and rules are not affected.")
+        clear_btn.clicked.connect(self._clear_data)
+        hdr.addWidget(clear_btn)
+
         root.addLayout(hdr)
 
         # Date filter
@@ -134,6 +143,33 @@ class DashboardPage(QWidget):
         self._start = start
         self._end   = end
         self.refresh()
+
+    def _clear_data(self):
+        reply = QMessageBox.warning(
+            self,
+            "Clear All Data",
+            "This will permanently delete all imported statements and transactions.\n\n"
+            "Your categories and categorisation rules will not be affected.\n\n"
+            "Are you sure you want to start fresh?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        deleted = db.clear_all_data(DB_PATH)
+
+        QMessageBox.information(
+            self,
+            "Data Cleared",
+            f"Deleted {deleted['transactions']:,} transactions "
+            f"from {deleted['statements']:,} statement(s).\n\n"
+            "You can now import fresh statements.",
+        )
+
+        self.refresh()
+        # Navigate to Imports so the user can upload immediately
+        self.navigate.emit("imports", {})
 
     def refresh(self):
         s, e = self._start or None, self._end or None
