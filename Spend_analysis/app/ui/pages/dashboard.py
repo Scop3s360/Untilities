@@ -1,0 +1,165 @@
+"""app/ui/pages/dashboard.py — Dashboard home page."""
+from __future__ import annotations
+
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                              QScrollArea, QSplitter, QSizePolicy, QFrame)
+from PyQt6.QtCore import Qt, pyqtSignal
+
+from app.ui.theme import C
+from app.ui.charts import DonutChart, LineChart, HBarChart
+from app.ui.widgets.cards import SummaryCard, SummaryCardRow
+from app.ui.widgets.filters import DateFilterBar
+from app.ui.widgets.tx_table import TransactionTable
+from app import database as db
+from app.config import DB_PATH
+
+
+def _heading(text: str, size=16) -> QLabel:
+    l = QLabel(text)
+    l.setStyleSheet(f"color:{C['text']};font-size:{size}px;font-weight:700;")
+    return l
+
+
+class DashboardPage(QWidget):
+    navigate = pyqtSignal(str, dict)  # page_name, params
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._start = self._end = ""
+        self._build()
+
+    def _build(self):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(28, 24, 28, 24)
+        root.setSpacing(20)
+
+        # Header
+        hdr = QHBoxLayout()
+        title = QLabel("Dashboard")
+        title.setStyleSheet(f"color:{C['text']};font-size:24px;font-weight:800;")
+        hdr.addWidget(title)
+        hdr.addStretch()
+        root.addLayout(hdr)
+
+        # Date filter
+        self._date_filter = DateFilterBar()
+        self._date_filter.filter_changed.connect(self._on_date_changed)
+        root.addWidget(self._date_filter)
+
+        # Scrollable body
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        body_w = QWidget()
+        body = QVBoxLayout(body_w)
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(20)
+        scroll.setWidget(body_w)
+        root.addWidget(scroll)
+
+        # ── Summary cards ─────────────────────────────────────────
+        self._card_income   = SummaryCard("Total Income",   "£0",  "This period", "💰", C["green"])
+        self._card_spend    = SummaryCard("Total Spending", "£0",  "This period", "💳", C["red"])
+        self._card_saved    = SummaryCard("Saved",          "£0",  "This period", "🏦", C["blue"])
+        self._card_net      = SummaryCard("Net Position",   "£0",  "",            "📊", C["accent"])
+        self._card_txcount  = SummaryCard("Transactions",   "0",   "Imported",    "📋")
+        self._card_stmts    = SummaryCard("Statements",     "0",   "Imported",    "📄")
+
+        for card, page in [
+            (self._card_income,  "transactions"),
+            (self._card_spend,   "transactions"),
+            (self._card_saved,   "categories"),
+            (self._card_txcount, "transactions"),
+        ]:
+            card.clicked.connect(lambda p=page: self.navigate.emit(p, {}))
+
+        body.addWidget(SummaryCardRow([
+            self._card_income, self._card_spend,
+            self._card_saved,  self._card_net,
+            self._card_txcount, self._card_stmts,
+        ]))
+
+        # ── Charts row ────────────────────────────────────────────
+        charts_row = QHBoxLayout()
+        charts_row.setSpacing(16)
+
+        # Donut — spending by category
+        donut_wrap = self._wrap("Spending by Category")
+        self._donut = DonutChart()
+        donut_wrap.layout().addWidget(self._donut)
+        charts_row.addWidget(donut_wrap, 5)
+
+        # Top merchants
+        merch_wrap = self._wrap("Top Merchants")
+        self._hbar = HBarChart()
+        merch_wrap.layout().addWidget(self._hbar)
+        charts_row.addWidget(merch_wrap, 5)
+
+        body.addLayout(charts_row)
+
+        # ── Trend chart ───────────────────────────────────────────
+        trend_wrap = self._wrap("Monthly Spending Trend")
+        self._line = LineChart()
+        trend_wrap.layout().addWidget(self._line)
+        body.addWidget(trend_wrap)
+
+        # ── Recent transactions ───────────────────────────────────
+        body.addWidget(_heading("Recent Transactions", 14))
+        self._tx_table = TransactionTable(show_export=False)
+        self._tx_table.setFixedHeight(280)
+        self._tx_table.row_selected.connect(
+            lambda r: self.navigate.emit("transactions", {"tx": r}))
+        body.addWidget(self._tx_table)
+
+        body.addStretch()
+
+    def _wrap(self, title: str) -> QFrame:
+        frame = QFrame()
+        frame.setStyleSheet(f"""
+            QFrame {{
+                background:{C['bg2']};
+                border:1px solid {C['border']};
+                border-radius:14px;
+            }}
+        """)
+        lay = QVBoxLayout(frame)
+        lay.setContentsMargins(16, 14, 16, 16)
+        lay.setSpacing(10)
+        h = QLabel(title)
+        h.setStyleSheet(f"color:{C['text']};font-size:14px;font-weight:700;")
+        lay.addWidget(h)
+        return frame
+
+    def _on_date_changed(self, start: str, end: str):
+        self._start = start
+        self._end   = end
+        self.refresh()
+
+    def refresh(self):
+        s, e = self._start or None, self._end or None
+        stats = db.get_dashboard_stats(DB_PATH, s, e)
+        self._card_income.set_value(f"£{stats['total_income']:,.2f}")
+        self._card_spend.set_value(f"£{stats['total_spending']:,.2f}")
+        self._card_saved.set_value(f"£{stats['total_saved']:,.2f}")
+        net = stats["net"]
+        col = C["green"] if net >= 0 else C["red"]
+        self._card_net._value_lbl.setStyleSheet(f"color:{col};font-size:22px;font-weight:700;")
+        self._card_net.set_value(f"£{net:,.2f}")
+        self._card_txcount.set_value(str(stats["tx_count"]))
+        self._card_stmts.set_value(str(stats["stmt_count"]))
+
+        cat_data = db.get_spending_by_category(DB_PATH, s, e)
+        self._donut.update(cat_data)
+
+        merch_data = db.get_top_merchants(DB_PATH, s, e, limit=8)
+        self._hbar.update(merch_data)
+
+        trend = db.get_monthly_spending(DB_PATH, months=12)
+        self._line.update(trend)
+
+        recent = db.get_recent_transactions(DB_PATH, limit=20)
+        self._tx_table.load(recent)
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        self.refresh()
