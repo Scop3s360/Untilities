@@ -192,29 +192,23 @@ def add_category(db_path: Path, name: str, display_order: int = 500) -> Category
 # ── Seeding ────────────────────────────────────────────────────────────────────
 
 def _seed_categories(conn: sqlite3.Connection) -> None:
-    existing = conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0]
-    if existing > 0:
-        return
+    """Additive seed — inserts any missing categories, never overwrites existing."""
     conn.executemany(
         "INSERT OR IGNORE INTO categories (name, display_order) VALUES (?, ?)",
         DEFAULT_CATEGORIES,
     )
-    logger.info("Seeded %d default categories.", len(DEFAULT_CATEGORIES))
+    logger.debug("Category seed pass complete (%d definitions).", len(DEFAULT_CATEGORIES))
 
 
 def _seed_builtin_rules(conn: sqlite3.Connection) -> None:
-    existing = conn.execute(
-        "SELECT COUNT(*) FROM rules WHERE is_user_rule=0"
-    ).fetchone()[0]
-    if existing > 0:
-        return
+    """Additive seed — inserts any missing built-in rules, never overwrites existing."""
     now = _now()
     conn.executemany("""
         INSERT OR IGNORE INTO rules
             (keyword, category_name, priority, enabled, is_user_rule, created_at, modified_at)
         VALUES (?, ?, 100, 1, 0, ?, ?)
     """, [(kw, cat, now, now) for kw, cat in BUILTIN_RULES])
-    logger.info("Seeded %d built-in rules.", len(BUILTIN_RULES))
+    logger.debug("Rule seed pass complete (%d definitions).", len(BUILTIN_RULES))
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
