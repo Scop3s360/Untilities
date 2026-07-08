@@ -118,6 +118,79 @@ def clear_all_data(db_path: Path) -> dict:
         con.execute("DELETE FROM sqlite_sequence WHERE name IN ('transactions','statements')")
     return {"transactions": tx_count, "statements": stmt_count}
 
+# ── Category migration ────────────────────────────────────────────────────────
+
+# Maps every old category name to its simplified replacement.
+# If a category is already a valid new category it maps to itself.
+OLD_TO_NEW_CATEGORIES: dict[str, str] = {
+    # Income
+    "Income": "Income", "Salary": "Income", "Benefits": "Income",
+    "Refunds": "Income", "Gifts Received": "Income", "Interest": "Income",
+    "Other Income": "Income",
+    # Housing
+    "Home": "Housing", "Mortgage": "Housing", "Rent": "Housing",
+    "Council Tax": "Housing", "Utilities": "Housing", "Internet": "Housing",
+    "Phone": "Housing", "Insurance": "Housing", "Home Maintenance": "Housing",
+    # Food & Drink
+    "Living": "Food & Drink", "Groceries": "Food & Drink",
+    "Takeaways": "Food & Drink", "Restaurants": "Food & Drink",
+    "Coffee": "Food & Drink", "Alcohol": "Food & Drink",
+    # Transport
+    "Transport": "Transport", "Fuel": "Transport",
+    "Public Transport": "Transport", "Taxi / Uber": "Transport",
+    "Parking": "Transport", "Vehicle Maintenance": "Transport",
+    # Shopping
+    "Shopping": "Shopping", "General Shopping": "Shopping",
+    "Clothing": "Shopping", "Electronics": "Shopping", "DIY": "Shopping",
+    # Hobbies
+    "Books": "Hobbies", "Hobbies": "Hobbies", "Gaming": "Hobbies",
+    "Neon Goblin": "Hobbies",
+    # Entertainment
+    "Lifestyle": "Entertainment", "Entertainment": "Entertainment",
+    "Subscriptions": "Entertainment",
+    # Travel
+    "Holiday": "Travel", "Travel": "Travel", "Hotels": "Travel",
+    "Flights": "Travel",
+    # Finance
+    "Finance": "Finance", "Savings": "Finance", "Investments": "Finance",
+    "Bank Fees": "Finance", "Fees": "Finance",
+    "Cash Withdrawal": "Finance", "Transfers": "Finance",
+    # Health
+    "Health": "Health", "Medical": "Health", "Dental": "Health",
+    "Pharmacy": "Health", "Fitness": "Health",
+    # Family
+    "Family": "Family", "Child Support": "Family", "Childcare": "Family",
+    "Education": "Family", "Pets": "Family", "Gifts": "Family",
+    # Other
+    "Charity": "Other", "Unknown": "Other", "Other": "Other",
+}
+
+_NEW_CATEGORIES = frozenset(OLD_TO_NEW_CATEGORIES.values())
+
+
+def migrate_categories(db_path: Path) -> dict[str, tuple[str, int]]:
+    """
+    Migrate transaction categories from the old granular system to the new
+    simplified 12-category system.  Safe to call multiple times — skips
+    categories that are already valid new categories.
+    Returns {old_cat: (new_cat, rows_updated)}.
+    """
+    results: dict[str, tuple[str, int]] = {}
+    with _conn(db_path) as con:
+        rows = con.execute(
+            "SELECT DISTINCT category FROM transactions").fetchall()
+        for row in rows:
+            old = row[0] or "Other"
+            if old in _NEW_CATEGORIES:
+                continue
+            new = OLD_TO_NEW_CATEGORIES.get(old, "Other")
+            cur = con.execute(
+                "UPDATE transactions SET category=? WHERE category=?",
+                (new, old))
+            results[old] = (new, cur.rowcount)
+    return results
+
+
 # ── Merchant management ────────────────────────────────────────────────────────
 
 _UNCATEGORISED_CATS = ("'Other'", "'Unknown'", "''")

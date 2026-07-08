@@ -208,6 +208,91 @@ def delete_user_rule(db_path: Path, rule_id: int) -> None:
     logger.info("Rule %d deleted.", rule_id)
 
 
+# ── Category migration ─────────────────────────────────────────────────────────
+
+_OLD_TO_NEW: dict[str, str] = {
+    "Income": "Income", "Salary": "Income", "Benefits": "Income",
+    "Refunds": "Income", "Gifts Received": "Income", "Interest": "Income",
+    "Other Income": "Income",
+    "Home": "Housing", "Mortgage": "Housing", "Rent": "Housing",
+    "Council Tax": "Housing", "Utilities": "Housing", "Internet": "Housing",
+    "Phone": "Housing", "Insurance": "Housing", "Home Maintenance": "Housing",
+    "Living": "Food & Drink", "Groceries": "Food & Drink",
+    "Takeaways": "Food & Drink", "Restaurants": "Food & Drink",
+    "Coffee": "Food & Drink", "Alcohol": "Food & Drink",
+    "Transport": "Transport", "Fuel": "Transport",
+    "Public Transport": "Transport", "Taxi / Uber": "Transport",
+    "Parking": "Transport", "Vehicle Maintenance": "Transport",
+    "Shopping": "Shopping", "General Shopping": "Shopping",
+    "Clothing": "Shopping", "Electronics": "Shopping", "DIY": "Shopping",
+    "Books": "Hobbies", "Hobbies": "Hobbies", "Gaming": "Hobbies",
+    "Neon Goblin": "Hobbies",
+    "Lifestyle": "Entertainment", "Entertainment": "Entertainment",
+    "Subscriptions": "Entertainment",
+    "Holiday": "Travel", "Travel": "Travel", "Hotels": "Travel",
+    "Flights": "Travel",
+    "Finance": "Finance", "Savings": "Finance", "Investments": "Finance",
+    "Bank Fees": "Finance", "Fees": "Finance",
+    "Cash Withdrawal": "Finance", "Transfers": "Finance",
+    "Health": "Health", "Medical": "Health", "Dental": "Health",
+    "Pharmacy": "Health", "Fitness": "Health",
+    "Family": "Family", "Child Support": "Family", "Childcare": "Family",
+    "Education": "Family", "Pets": "Family", "Gifts": "Family",
+    "Charity": "Other", "Unknown": "Other", "Other": "Other",
+}
+
+_NEW_CATS = frozenset(_OLD_TO_NEW.values())
+
+
+def migrate_rule_categories(db_path: Path) -> dict[str, tuple[str, int]]:
+    """
+    Migrate user and built-in rules that reference old category names.
+    Also resets the categories table so it re-seeds with the simplified list
+    on the next call to initialise().
+    Safe to call multiple times.
+    Returns {old_cat: (new_cat, user_rules_updated)}.
+    """
+    results: dict[str, tuple[str, int]] = {}
+    with _connect(db_path) as conn:
+        # Migrate user rules
+        for row in conn.execute(
+                "SELECT DISTINCT category_name FROM rules WHERE is_user_rule=1"
+        ).fetchall():
+            old = row[0]
+            if old in _NEW_CATS:
+                continue
+            new = _OLD_TO_NEW.get(old, "Other")
+            cur = conn.execute(
+                "UPDATE rules SET category_name=? "
+                "WHERE category_name=? AND is_user_rule=1",
+                (new, old))
+            results[old] = (new, cur.rowcount)
+            logger.info("Migrated user rules: '%s' -> '%s' (%d rules)", old, new, cur.rowcount)
+
+        # Migrate built-in rules in DB (they'll also be re-seeded from defaults.py)
+        for row in conn.execute(
+                "SELECT DISTINCT category_name FROM rules WHERE is_user_rule=0"
+        ).fetchall():
+            old = row[0]
+            if old in _NEW_CATS:
+                continue
+            new = _OLD_TO_NEW.get(old, "Other")
+            conn.execute(
+                "UPDATE rules SET category_name=? "
+                "WHERE category_name=? AND is_user_rule=0",
+                (new, old))
+
+        # Reset categories table so initialise() re-seeds with the 12 new ones.
+        # User-defined categories not in the new system are mapped to Other above.
+        existing_cats = {r[0] for r in conn.execute(
+            "SELECT name FROM categories").fetchall()}
+        old_cats = existing_cats - _NEW_CATS
+        for cat in old_cats:
+            conn.execute("DELETE FROM categories WHERE name=?", (cat,))
+
+    return results
+
+
 def add_category(db_path: Path, name: str, display_order: int = 500) -> Category:
     """Add a new user-defined category."""
     with _connect(db_path) as conn:

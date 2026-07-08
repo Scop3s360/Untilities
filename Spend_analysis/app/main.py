@@ -23,6 +23,13 @@ def main():
     db.initialise(DB_PATH)
     rule_db.initialise(RULES_DB_PATH)
 
+    # ── Migrate to simplified category system (idempotent) ─────────────────
+    from app.database import migrate_categories
+    from rule_engine.db import migrate_rule_categories
+    migrate_rule_categories(RULES_DB_PATH)   # migrate rules + reset old cats
+    rule_db.initialise(RULES_DB_PATH)        # re-seed with 12 new categories
+    migrate_categories(DB_PATH)              # migrate transaction categories
+
     # ── Pre-warm the rule engine ───────────────────────────────────────────
     from app.services.import_service import get_engine
     get_engine()   # loads rules into memory
