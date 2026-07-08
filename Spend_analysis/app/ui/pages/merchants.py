@@ -96,6 +96,7 @@ class CategoryScopeDialog(QDialog):
 
 class MerchantDetailPanel(QFrame):
     category_changed = pyqtSignal(str, str)  # merchant, new_cat
+    open_in_transactions = pyqtSignal(str, str)  # merchant, category
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -151,6 +152,14 @@ class MerchantDetailPanel(QFrame):
         self._chart.setFixedHeight(160)
         lay.addWidget(self._chart)
 
+        # Open in Transactions
+        open_btn = QPushButton("Open in Transactions ->")
+        open_btn.setFixedHeight(32)
+        open_btn.setProperty("flat", True)
+        open_btn.setStyleSheet(f"color:{C['accent']};font-size:11px;text-align:left;")
+        open_btn.clicked.connect(self._open_in_transactions)
+        lay.addWidget(open_btn)
+
         # Transactions
         lay.addWidget(_lbl("Transactions", 12, bold=True))
         self._tbl = TransactionTable(show_export=False)
@@ -160,6 +169,7 @@ class MerchantDetailPanel(QFrame):
 
     def load(self, row: dict):
         self._merchant = row["merchant"]
+        self._current_cat = row.get("category", "Other") or "Other"
         self.setVisible(True)
 
         total  = row.get("total_spend", 0) or 0
@@ -183,6 +193,10 @@ class MerchantDetailPanel(QFrame):
 
         txs = db.get_transactions(DB_PATH, merchant=self._merchant)
         self._tbl.load(txs)
+
+    def _open_in_transactions(self):
+        if self._merchant:
+            self.open_in_transactions.emit(self._merchant, self._current_cat)
 
     def _apply_category(self):
         if not self._merchant:
@@ -214,6 +228,7 @@ TBL_COLS = [
 
 
 class MerchantsPage(QWidget):
+    navigate = pyqtSignal(str, dict)
     def __init__(self, parent=None):
         super().__init__(parent)
         self._data: list[dict] = []
@@ -331,6 +346,7 @@ class MerchantsPage(QWidget):
 
         self._detail = MerchantDetailPanel()
         self._detail.category_changed.connect(self._on_category_changed)
+        self._detail.open_in_transactions.connect(self._on_open_in_transactions)
         splitter.addWidget(self._detail)
         splitter.setSizes([860, 340])
         splitter.setCollapsible(1, True)
@@ -486,6 +502,15 @@ class MerchantsPage(QWidget):
     def _on_category_changed(self, merchant: str, new_cat: str):
         """Refresh the row for this merchant in the table after detail-panel change."""
         self._load()
+
+    def _on_open_in_transactions(self, merchant: str, category: str):
+        """Navigate to Transactions page pre-filtered to this merchant."""
+        self.navigate.emit(
+            "transactions",
+            {"merchant": merchant,
+             "_crumbs": [("Dashboard", "dashboard", {}),
+                         ("Merchants", "merchants", {}),
+                         (merchant, None, {})]})
 
     def showEvent(self, e):
         super().showEvent(e)

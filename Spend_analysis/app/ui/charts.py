@@ -10,7 +10,7 @@ from matplotlib.patches import FancyBboxPatch
 import numpy as np
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from app.ui.theme import C, CHART_COLORS, MPL_STYLE
 
@@ -36,10 +36,16 @@ class BaseChart(QWidget):
 
 class DonutChart(BaseChart):
     """Spending by category donut chart."""
+    category_clicked = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent, figsize=(5, 4))
         self.ax = self.fig.add_subplot(111)
+        self.canvas.mpl_connect('pick_event', self._on_pick)
+
+    def _on_pick(self, event):
+        if hasattr(event.artist, '_category'):
+            self.category_clicked.emit(event.artist._category)
 
     def update(self, data: list[dict]):
         """data: list of {'category': str, 'total': float}"""
@@ -60,6 +66,11 @@ class DonutChart(BaseChart):
             startangle=90,
             wedgeprops=dict(width=0.55, edgecolor=C["bg2"], linewidth=2),
         )
+
+        # Tag each wedge for click detection
+        for w, lbl in zip(wedges, labels):
+            w.set_picker(True)
+            w._category = lbl
 
         # Centre total
         total = sum(sizes)

@@ -93,13 +93,18 @@ class DashboardPage(QWidget):
         charts_row.setSpacing(16)
 
         # Donut — spending by category
-        donut_wrap = self._wrap("Spending by Category")
+        donut_wrap = self._wrap("Spending by Category  (click a slice to explore)")
         self._donut = DonutChart()
+        self._donut.category_clicked.connect(
+            lambda cat: self.navigate.emit(
+                "transactions",
+                {"category": cat,
+                 "_crumbs": [("Dashboard", "dashboard", {}), (cat, None, {})]}))
         donut_wrap.layout().addWidget(self._donut)
         charts_row.addWidget(donut_wrap, 5)
 
         # Top merchants
-        merch_wrap = self._wrap("Top Merchants")
+        merch_wrap = self._wrap("Top Merchants  (click to explore)")
         self._hbar = HBarChart()
         merch_wrap.layout().addWidget(self._hbar)
         charts_row.addWidget(merch_wrap, 5)

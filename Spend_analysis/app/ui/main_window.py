@@ -11,7 +11,6 @@ from app.ui.theme import C
 from app.ui.pages.dashboard    import DashboardPage
 from app.ui.pages.imports      import ImportsPage
 from app.ui.pages.transactions import TransactionsPage
-from app.ui.pages.categories   import CategoriesPage
 from app.ui.pages.merchants    import MerchantsPage
 from app.ui.pages.reports      import ReportsPage
 from app.ui.pages.settings     import SettingsPage
@@ -25,7 +24,6 @@ NAV_ITEMS = [
     ("🏠", "Dashboard",     "dashboard",    False),
     ("📥", "Imports",       "imports",      False),
     ("💳", "Transactions",  "transactions", False),
-    ("📂", "Categories",    "categories",   False),
     ("🏪", "Merchants",     "merchants",    False),
     ("📈", "Reports",       "reports",      False),
     None,   # separator
@@ -230,7 +228,6 @@ class MainWindow(QMainWindow):
             "dashboard":    DashboardPage(),
             "imports":      ImportsPage(),
             "transactions": TransactionsPage(),
-            "categories":   CategoriesPage(),
             "merchants":    MerchantsPage(),
             "reports":      ReportsPage(),
             "settings":     SettingsPage(),
@@ -248,11 +245,11 @@ class MainWindow(QMainWindow):
     def _wire_signals(self):
         self._sidebar.page_requested.connect(self._navigate)
 
-        # Dashboard drill-down
+        # Dashboard drill-down (category click → Transactions)
         self._pages["dashboard"].navigate.connect(self._navigate_with_params)
 
-        # Categories drill-down
-        self._pages["categories"].navigate.connect(self._navigate_with_params)
+        # Merchants → Transactions drill-down
+        self._pages["merchants"].navigate.connect(self._navigate_with_params)
 
         # Imports → refresh dashboard
         self._pages["imports"].imports_complete.connect(
