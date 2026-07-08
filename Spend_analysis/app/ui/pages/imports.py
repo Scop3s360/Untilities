@@ -140,13 +140,16 @@ class ImportsPage(QWidget):
         lay.addWidget(hist_lbl)
 
         self._hist_tbl = QTableWidget()
-        self._hist_tbl.setColumnCount(6)
+        self._hist_tbl.setColumnCount(8)
         self._hist_tbl.setHorizontalHeaderLabels(
-            ["Filename", "Bank", "Period", "Transactions", "Duplicates Skipped", "Imported"])
+            ["Statement", "Bank", "Period", "Pages", "Transactions", "Duplicates", "Imported", ""])
         self._hist_tbl.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._hist_tbl.setAlternatingRowColors(True)
         self._hist_tbl.verticalHeader().setVisible(False)
-        self._hist_tbl.horizontalHeader().setStretchLastSection(True)
+        hdr = self._hist_tbl.horizontalHeader()
+        hdr.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        hdr.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        self._hist_tbl.setColumnWidth(7, 140)
         self._hist_tbl.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         lay.addWidget(self._hist_tbl)
 
@@ -158,6 +161,19 @@ class ImportsPage(QWidget):
         lay.addWidget(del_btn)
 
     def _start_import(self, paths: list[str]):
+        # Duplicate detection: warn if any filename already imported
+        existing = {s["filename"] for s in db.get_all_statements(DB_PATH)}
+        dupes = [os.path.basename(p) for p in paths if os.path.basename(p) in existing]
+        if dupes:
+            msg = "\n".join(dupes)
+            reply = QMessageBox.question(
+                self, "Duplicate Statements Detected",
+                f"The following statements have already been imported:\n\n{msg}\n\n"
+                "Import anyway? (Identical transactions will be skipped automatically.)",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.No:
+                return
+
         self._prog = QProgressDialog("Importing…", None, 0, 0, self)
         self._prog.setWindowModality(Qt.WindowModality.WindowModal)
         self._prog.setMinimumDuration(0)
@@ -185,15 +201,42 @@ class ImportsPage(QWidget):
         stmts = db.get_all_statements(DB_PATH)
         self._hist_tbl.setRowCount(len(stmts))
         for r, s in enumerate(stmts):
+            self._hist_tbl.setRowHeight(r, 38)
             vals = [
-                s["filename"], s["bank"], s.get("period_label",""),
-                str(s["transaction_count"]), str(s["duplicate_count"]),
-                s["imported_at"][:19].replace("T"," "),
+                s["filename"],
+                s["bank"],
+                s.get("period_label", ""),
+                str(s.get("pages", 0)),
+                str(s["transaction_count"]),
+                str(s["duplicate_count"]),
+                s["imported_at"][:19].replace("T", " "),
             ]
             for c, v in enumerate(vals):
                 item = QTableWidgetItem(v)
                 item.setData(Qt.ItemDataRole.UserRole, s["id"])
+                item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
                 self._hist_tbl.setItem(r, c, item)
+
+            # "View Transactions" button in last column
+            btn = QPushButton("View Transactions →")
+            btn.setProperty("flat", True)
+            btn.setStyleSheet(f"color:{C['accent']};font-size:11px;padding:0 8px;")
+            stmt_id = s["id"]
+            btn.clicked.connect(lambda _, sid=stmt_id: self._view_transactions(sid))
+            self._hist_tbl.setCellWidget(r, 7, btn)
+
+    def _view_transactions(self, stmt_id: int):
+        """Open the Transactions page filtered to this statement's period."""
+        stmts = db.get_all_statements(DB_PATH)
+        s = next((x for x in stmts if x["id"] == stmt_id), None)
+        if s:
+            period = s.get("period_label", "") or s["filename"]
+            QMessageBox.information(
+                self, "View Transactions",
+                f"Navigate to the Transactions page and search for:\n\n\"{period}\"\n\n"
+                f"  •  {s['transaction_count']} transactions imported\n"
+                f"  •  {s.get('pages', 0)} pages\n"
+                f"  •  Imported {s['imported_at'][:19].replace('T', ' ')}")
 
     def _delete_selected(self):
         row = self._hist_tbl.currentRow()
@@ -215,3 +258,4 @@ class ImportsPage(QWidget):
     def showEvent(self, e):
         super().showEvent(e)
         self._load_history()
+

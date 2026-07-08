@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS statements (
     filepath          TEXT,
     bank              TEXT    NOT NULL DEFAULT 'Nationwide',
     period_label      TEXT,
+    pages             INTEGER NOT NULL DEFAULT 0,
     imported_at       TEXT    NOT NULL,
     transaction_count INTEGER NOT NULL DEFAULT 0,
     duplicate_count   INTEGER NOT NULL DEFAULT 0,
@@ -78,12 +79,14 @@ def initialise(db_path: Path) -> None:
 # ── Statement CRUD ─────────────────────────────────────────────────────────────
 
 def insert_statement(db_path: Path, filename: str, filepath: str,
-                     bank: str, period_label: str) -> int:
+                     bank: str, period_label: str, pages: int = 0) -> int:
     with _conn(db_path) as con:
         cur = con.execute(
-            """INSERT INTO statements (filename,filepath,bank,period_label,imported_at)
-               VALUES (?,?,?,?,?)""",
-            (filename, filepath, bank, period_label, datetime.now().isoformat()))
+            """INSERT INTO statements
+               (filename,filepath,bank,period_label,pages,imported_at)
+               VALUES (?,?,?,?,?,?)""",
+            (filename, filepath, bank, period_label, pages,
+             datetime.now().isoformat()))
         return cur.lastrowid
 
 def finalise_statement(db_path: Path, stmt_id: int,
@@ -98,6 +101,23 @@ def get_all_statements(db_path: Path) -> list[dict]:
         rows = con.execute(
             "SELECT * FROM statements ORDER BY imported_at DESC").fetchall()
     return [dict(r) for r in rows]
+
+
+def get_import_summary(db_path: Path) -> dict:
+    """Summary stats for the dashboard Import Summary card."""
+    with _conn(db_path) as con:
+        stmts  = con.execute("SELECT COUNT(*) FROM statements").fetchone()[0]
+        txs    = con.execute("SELECT COUNT(*) FROM transactions").fetchone()[0]
+        unique = con.execute("SELECT COUNT(DISTINCT merchant) FROM transactions").fetchone()[0]
+        uncat  = con.execute(
+            "SELECT COUNT(DISTINCT merchant) FROM transactions "
+            "WHERE category='Other' OR category=''").fetchone()[0]
+    return {
+        "statements":  stmts,
+        "transactions": txs,
+        "unique_merchants": unique,
+        "uncategorised": uncat,
+    }
 
 def delete_statement(db_path: Path, stmt_id: int) -> None:
     with _conn(db_path) as con:

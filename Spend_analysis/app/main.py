@@ -30,6 +30,14 @@ def main():
     rule_db.initialise(RULES_DB_PATH)        # re-seed with 12 new categories
     migrate_categories(DB_PATH)              # migrate transaction categories
 
+    # ── Idempotent schema migrations ───────────────────────────────────────
+    import sqlite3 as _sql
+    with _sql.connect(str(DB_PATH)) as _c:
+        # Add pages column to statements if missing (new in this version)
+        existing = [r[1] for r in _c.execute("PRAGMA table_info(statements)").fetchall()]
+        if "pages" not in existing:
+            _c.execute("ALTER TABLE statements ADD COLUMN pages INTEGER NOT NULL DEFAULT 0")
+
     # ── Pre-warm the rule engine ───────────────────────────────────────────
     from app.services.import_service import get_engine
     get_engine()   # loads rules into memory

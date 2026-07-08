@@ -13,6 +13,7 @@ from app.ui.widgets.filters import DateFilterBar
 from app.ui.widgets.tx_table import TransactionTable
 from app import database as db
 from app.config import DB_PATH
+from app.ui.widgets.cards import MetricCard
 
 
 def _heading(text: str, size=16) -> QLabel:
@@ -125,6 +126,19 @@ class DashboardPage(QWidget):
             lambda r: self.navigate.emit("transactions", {"tx": r}))
         body.addWidget(self._tx_table)
 
+        # ── Import Summary strip ──────────────────────────────────
+        imp_wrap = self._wrap("📥  Import Summary")
+        imp_row = QHBoxLayout()
+        imp_row.setSpacing(12)
+        self._imp_stmts   = MetricCard("Statements Imported",  "0")
+        self._imp_txs     = MetricCard("Transactions Imported", "0")
+        self._imp_unique  = MetricCard("Unique Merchants",      "0")
+        self._imp_uncat   = MetricCard("Uncategorised",         "0",  C["red"])
+        for c in [self._imp_stmts, self._imp_txs, self._imp_unique, self._imp_uncat]:
+            imp_row.addWidget(c)
+        imp_wrap.layout().addLayout(imp_row)
+        body.addWidget(imp_wrap)
+
         body.addStretch()
 
     def _wrap(self, title: str) -> QFrame:
@@ -200,6 +214,12 @@ class DashboardPage(QWidget):
 
         recent = db.get_recent_transactions(DB_PATH, limit=20)
         self._tx_table.load(recent)
+
+        imp = db.get_import_summary(DB_PATH)
+        self._imp_stmts.set_value(str(imp["statements"]))
+        self._imp_txs.set_value(str(imp["transactions"]))
+        self._imp_unique.set_value(str(imp["unique_merchants"]))
+        self._imp_uncat.set_value(str(imp["uncategorised"]))
 
     def showEvent(self, e):
         super().showEvent(e)

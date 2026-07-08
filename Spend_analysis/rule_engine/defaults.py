@@ -329,3 +329,61 @@ BUILTIN_RULES: list[tuple[str, str]] = [
     ("COMIC RELIEF",            "Other"),
     ("RED CROSS",               "Other"),
 ]
+
+
+# ── Merchant Dictionary ────────────────────────────────────────────────────────
+# Each entry: raw_keyword (matched against raw description), canonical_name,
+# merchant_type, category.
+# Multiple raw_keywords can resolve to the same canonical merchant.
+
+MERCHANT_DICTIONARY: list[dict] = [
+    # Employer / Income
+    {"raw_keyword": "AMAZON WEB SERVICES",  "canonical_name": "Amazon Web Services",        "merchant_type": "Employer",            "category": "Income"},
+    {"raw_keyword": "MRS N LOCK",           "canonical_name": "Mrs N Lock",                 "merchant_type": "Family Transfer",     "category": "Income"},
+    {"raw_keyword": "JAMES N LOCK",         "canonical_name": "James N Lock",               "merchant_type": "Internal Transfer",   "category": "Income"},
+    # Bank / Finance
+    {"raw_keyword": "LLOYDS BANK",          "canonical_name": "Lloyds Bank",                "merchant_type": "Bank",                "category": "Finance"},
+    {"raw_keyword": "VM PERSONAL LOANS",    "canonical_name": "Virgin Money Personal Loans", "merchant_type": "Loan",               "category": "Finance"},
+    {"raw_keyword": "SPRIVE",               "canonical_name": "Sprive",                     "merchant_type": "Investment Platform", "category": "Finance"},
+    {"raw_keyword": "TRADING212",           "canonical_name": "Trading212",                 "merchant_type": "Investment Platform", "category": "Finance"},
+    {"raw_keyword": "TRADING 212",          "canonical_name": "Trading212",                 "merchant_type": "Investment Platform", "category": "Finance"},
+    {"raw_keyword": "CHECKMYFILE",          "canonical_name": "CheckMyFile",                "merchant_type": "Financial Services",  "category": "Finance"},
+    {"raw_keyword": "TV LICENSING",         "canonical_name": "TV Licensing",               "merchant_type": "Government",          "category": "Housing"},
+    # Healthcare
+    {"raw_keyword": "DONNA HARTNETT",       "canonical_name": "Donna Hartnett",             "merchant_type": "Healthcare",          "category": "Health"},
+    {"raw_keyword": "RTW SURGERIES",        "canonical_name": "RTW Surgeries",              "merchant_type": "Healthcare",          "category": "Health"},
+    {"raw_keyword": "OAKDALE VET",          "canonical_name": "Oakdale Vet Centre",         "merchant_type": "Healthcare",          "category": "Family"},
+    # Standing Orders
+    {"raw_keyword": "JENNA LYNNS",          "canonical_name": "Jenna Lynns",                "merchant_type": "Standing Order",      "category": "Family"},
+    {"raw_keyword": "SPARRING PARTNERS",    "canonical_name": "Sparring Partners",          "merchant_type": "Utility",             "category": "Other"},
+    # Food & Drink
+    {"raw_keyword": "TESCO STORES",         "canonical_name": "Tesco",                      "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "TESCO EXTRA",          "canonical_name": "Tesco",                      "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "TESCO EXPRESS",        "canonical_name": "Tesco",                      "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "SAINSBURYS",           "canonical_name": "Sainsburys",                 "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "SAINSBURY",            "canonical_name": "Sainsburys",                 "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "LIDL",                 "canonical_name": "Lidl",                       "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "GREGGS",               "canonical_name": "Greggs",                     "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "CAFE LOCAL",           "canonical_name": "Cafe Local",                 "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "PRET A MANGER",        "canonical_name": "Pret A Manger",              "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "CAFFE NERO",           "canonical_name": "Caffe Nero",                 "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "STARBUCKS",            "canonical_name": "Starbucks",                  "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "DELIVEROO",            "canonical_name": "Deliveroo",                  "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "DOMINOS",              "canonical_name": "Domino's",                   "merchant_type": "Merchant",            "category": "Food & Drink"},
+    {"raw_keyword": "DOMINO",              "canonical_name": "Domino's",                    "merchant_type": "Merchant",            "category": "Food & Drink"},
+    # Transport
+    {"raw_keyword": "UBER",                 "canonical_name": "Uber",                       "merchant_type": "Transport",           "category": "Transport"},
+    {"raw_keyword": "STAGECOACH",           "canonical_name": "Stagecoach",                 "merchant_type": "Transport",           "category": "Transport"},
+    {"raw_keyword": "LNER",                 "canonical_name": "LNER",                       "merchant_type": "Transport",           "category": "Transport"},
+    {"raw_keyword": "TFL",                  "canonical_name": "TFL",                        "merchant_type": "Transport",           "category": "Transport"},
+    {"raw_keyword": "BLACK TAXI",           "canonical_name": "Black Taxi",                 "merchant_type": "Transport",           "category": "Transport"},
+    # Hobbies
+    {"raw_keyword": "WARHAMMER",            "canonical_name": "Warhammer",                  "merchant_type": "Merchant",            "category": "Hobbies"},
+    {"raw_keyword": "GAMES WORKSHOP",       "canonical_name": "Warhammer",                  "merchant_type": "Merchant",            "category": "Hobbies"},
+    {"raw_keyword": "STEAM",                "canonical_name": "Steam",                      "merchant_type": "Merchant",            "category": "Hobbies"},
+    # Shopping
+    {"raw_keyword": "RICHARDSONS CYCLES",   "canonical_name": "Richardsons Cycles",         "merchant_type": "Merchant",            "category": "Shopping"},
+    {"raw_keyword": "SUPER RIGS",           "canonical_name": "Super Rigs",                 "merchant_type": "Merchant",            "category": "Shopping"},
+    # Family
+    {"raw_keyword": "THE ENTERTAINER",      "canonical_name": "The Entertainer",            "merchant_type": "Merchant",            "category": "Family"},
+]

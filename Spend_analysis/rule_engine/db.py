@@ -22,8 +22,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Generator
 
-from .defaults import BUILTIN_RULES, DEFAULT_CATEGORIES
-from .models import Category, Rule
+from .defaults import BUILTIN_RULES, DEFAULT_CATEGORIES, MERCHANT_DICTIONARY
+from .models import Category, Rule, MerchantEntry
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,20 @@ CREATE TABLE IF NOT EXISTS rules (
 
 CREATE INDEX IF NOT EXISTS idx_rules_priority  ON rules (priority);
 CREATE INDEX IF NOT EXISTS idx_rules_enabled   ON rules (enabled);
+
+CREATE TABLE IF NOT EXISTS merchants (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    raw_keyword      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+    canonical_name   TEXT    NOT NULL,
+    merchant_type    TEXT    NOT NULL DEFAULT 'Merchant',
+    category         TEXT    NOT NULL DEFAULT 'Other',
+    enabled          INTEGER NOT NULL DEFAULT 1,
+    created_at       TEXT    NOT NULL,
+    modified_at      TEXT    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_merchants_canon ON merchants(canonical_name);
+CREATE INDEX IF NOT EXISTS idx_merchants_type  ON merchants(merchant_type);
 """
 
 
@@ -85,6 +99,7 @@ def initialise(db_path: Path) -> None:
         conn.executescript(_DDL)
         _seed_categories(conn)
         _seed_builtin_rules(conn)
+        _seed_merchants(conn)
 
     logger.info("Database initialised: %s", db_path)
 
@@ -208,7 +223,103 @@ def delete_user_rule(db_path: Path, rule_id: int) -> None:
     logger.info("Rule %d deleted.", rule_id)
 
 
+# ── Merchant Dictionary ────────────────────────────────────────────────────────
+
+MERCHANT_TYPES = [
+    "Employer", "Merchant", "Subscription", "Bank", "Savings Platform",
+    "Investment Platform", "Healthcare", "Transport", "Government",
+    "Person", "Family Transfer", "Standing Order", "Direct Debit",
+    "Utility", "Holiday", "Entertainment", "Financial Services",
+    "Internal Transfer", "Loan", "Other",
+]
+
+
+def _seed_merchants(conn: sqlite3.Connection) -> None:
+    """Seed the merchant dictionary from defaults. INSERT OR IGNORE — never overwrites."""
+    now = _now()
+    conn.executemany("""
+        INSERT OR IGNORE INTO merchants
+            (raw_keyword, canonical_name, merchant_type, category, created_at, modified_at)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+        [(m["raw_keyword"], m["canonical_name"], m["merchant_type"],
+          m["category"], now, now)
+         for m in MERCHANT_DICTIONARY])
+
+
+def lookup_merchant(db_path: Path, description: str
+                    ) -> dict | None:
+    """
+    Find the best matching merchant entry for a raw transaction description.
+    Returns the matching row as a dict, or None if no match found.
+    Matching is case-insensitive substring: raw_keyword in description.
+    Longer keywords take priority (more specific match wins).
+    """
+    desc_upper = description.upper()
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT * FROM merchants WHERE enabled=1 ORDER BY LENGTH(raw_keyword) DESC"
+        ).fetchall()
+    for row in rows:
+        if row["raw_keyword"].upper() in desc_upper:
+            return dict(row)
+    return None
+
+
+def get_all_merchants_dict(db_path: Path) -> list[dict]:
+    """Return all merchant dictionary entries."""
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT * FROM merchants ORDER BY canonical_name"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def upsert_merchant_dict(db_path: Path, raw_keyword: str, canonical_name: str,
+                         merchant_type: str, category: str) -> None:
+    """Create or update a merchant dictionary entry."""
+    now = _now()
+    kw = raw_keyword.strip()
+    with _connect(db_path) as conn:
+        existing = conn.execute(
+            "SELECT id FROM merchants WHERE raw_keyword=?", (kw,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                """UPDATE merchants SET canonical_name=?, merchant_type=?,
+                   category=?, modified_at=? WHERE id=?""",
+                (canonical_name, merchant_type, category, now, existing["id"]))
+        else:
+            conn.execute(
+                """INSERT INTO merchants
+                   (raw_keyword, canonical_name, merchant_type, category, created_at, modified_at)
+                   VALUES (?,?,?,?,?,?)""",
+                (kw, canonical_name, merchant_type, category, now, now))
+    logger.info("Upserted merchant dict: '%s' → %s (%s)", kw, canonical_name, category)
+
+
+def merge_merchants(db_path: Path, transactions_db: "Path",
+                    from_merchant: str, into_merchant: str) -> int:
+    """
+    Rename all transactions with merchant == from_merchant to into_merchant.
+    Returns number of transactions updated.
+    Used to merge duplicate merchants (e.g. 'Tesco Extra' → 'Tesco').
+    """
+    import sqlite3 as _s
+    con = _s.connect(str(transactions_db))
+    try:
+        cur = con.execute(
+            "UPDATE transactions SET merchant=? WHERE merchant=?",
+            (into_merchant, from_merchant))
+        con.commit()
+        count = cur.rowcount
+    finally:
+        con.close()
+    logger.info("Merged merchant '%s' → '%s' (%d transactions)", from_merchant, into_merchant, count)
+    return count
+
+
 # ── Category migration ─────────────────────────────────────────────────────────
+
 
 _OLD_TO_NEW: dict[str, str] = {
     "Income": "Income", "Salary": "Income", "Benefits": "Income",

@@ -14,6 +14,7 @@ from app import database as db
 from app.services.pdf_parser import parse_pdf, extract_merchant
 from app.config import DB_PATH, RULES_DB_PATH
 from rule_engine import RuleEngine
+from rule_engine.db import lookup_merchant
 
 # Shared engine instance (caller must call engine.start() before importing)
 _engine: RuleEngine | None = None
@@ -52,23 +53,39 @@ def _import_pdf(filepath: str) -> ImportResult:
     except Exception as e:
         return ImportResult(path.name, "Nationwide", "", 0, 0, error=str(e))
 
-    period = _infer_period(filepath)
+    # Get page count
+    try:
+        import pdfplumber
+        with pdfplumber.open(filepath) as pdf:
+            pages = len(pdf.pages)
+    except Exception:
+        pages = 0
+
+    period  = _infer_period(filepath)
     stmt_id = db.insert_statement(DB_PATH, path.name, filepath,
-                                  "Nationwide", period)
+                                  "Nationwide", period, pages)
     engine  = get_engine()
     inserted, dupes = 0, 0
     for tx in raw_txs:
-        is_credit = tx["credit"] is not None
-        cat = engine.categorise(
-            tx["description"],
-            amount=tx.get("credit") or tx.get("debit"),
-            is_credit=is_credit,
-        ).category
-        ok  = db.insert_transaction(
+        # Layer 0: merchant dictionary lookup (canonical name + category override)
+        merchant_entry = lookup_merchant(RULES_DB_PATH, tx["description"])
+        if merchant_entry:
+            merchant = merchant_entry["canonical_name"]
+            cat      = merchant_entry["category"]
+        else:
+            merchant  = tx.get("merchant") or extract_merchant(tx["description"])
+            is_credit = tx["credit"] is not None
+            cat = engine.categorise(
+                tx["description"],
+                amount=tx.get("credit") or tx.get("debit"),
+                is_credit=is_credit,
+            ).category
+
+        ok = db.insert_transaction(
             DB_PATH, stmt_id,
             tx["date"].strftime("%Y-%m-%d"),
             tx["description"],
-            tx["merchant"],
+            merchant,
             cat,
             tx["debit"],
             tx["credit"],

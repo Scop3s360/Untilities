@@ -17,10 +17,21 @@ class Category:
     """A spend category stored in the database."""
     id:           int
     name:         str
-    display_order: int = 0        # controls sort order in UI dropdowns
+    display_order: int = 0
 
     def __str__(self) -> str:
         return self.name
+
+
+@dataclass
+class MerchantEntry:
+    """An entry in the merchant dictionary."""
+    id:             int
+    raw_keyword:    str    # pattern matched against raw description
+    canonical_name: str    # clean display name
+    merchant_type:  str    # Employer / Merchant / Bank / etc.
+    category:       str    # default category when this merchant is matched
+    enabled:        bool = True
 
 
 @dataclass
