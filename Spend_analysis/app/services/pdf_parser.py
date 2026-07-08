@@ -136,3 +136,106 @@ def parse_pdf(path: str) -> list[dict]:
                         tx["merchant"] = extract_merchant(tx["description"])
                         results.append(tx)
     return results
+
+
+# ── Statement metadata extraction ──────────────────────────────────────────────
+
+def parse_statement_meta(path: str) -> dict:
+    """
+    Scan every page of the PDF for statement-level metadata.
+    Does NOT modify parse_pdf — called separately from the import service.
+
+    Returns a dict with keys:
+        opening_balance : float | None
+        closing_balance : float | None
+        statement_date  : str | None   (ISO YYYY-MM-DD)
+        expected_tx_count : int | None
+    """
+    if pdfplumber is None:
+        return {}
+
+    # Patterns for common Nationwide statement layouts
+    # "Opening balance   £1,234.56" or "Balance brought forward  £1,234.56"
+    _OPEN_PAT  = re.compile(
+        r"(?:opening\s+balance|balance\s+brought\s+forward|brought\s+forward)"
+        r"\s*[:\-]?\s*£?([\d,]+\.\d{2})",
+        re.IGNORECASE)
+    _CLOSE_PAT = re.compile(
+        r"(?:closing\s+balance|balance\s+carried\s+forward|carried\s+forward"
+        r"|new\s+balance|current\s+balance)"
+        r"\s*[:\-]?\s*£?([\d,]+\.\d{2})",
+        re.IGNORECASE)
+    # Statement date: "Statement date: 30 April 2026" or "30 April 2026"
+    _DATE_PAT  = re.compile(
+        r"(?:statement\s+date|statement\s+period|period\s+ending|as\s+at)"
+        r"[\s:\-]+(\d{1,2}\s+\w+\s+\d{4})",
+        re.IGNORECASE)
+    # "X transactions" for expected count
+    _TX_COUNT_PAT = re.compile(
+        r"(\d+)\s+transaction",
+        re.IGNORECASE)
+
+    opening = closing = stmt_date = expected_count = None
+    year = infer_year(path)
+
+    try:
+        with pdfplumber.open(path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text() or ""
+
+                if opening is None:
+                    m = _OPEN_PAT.search(text)
+                    if m:
+                        try:
+                            opening = float(m.group(1).replace(",", ""))
+                        except (ValueError, AttributeError):
+                            pass
+
+                if closing is None:
+                    m = _CLOSE_PAT.search(text)
+                    if m:
+                        try:
+                            closing = float(m.group(1).replace(",", ""))
+                        except (ValueError, AttributeError):
+                            pass
+
+                if stmt_date is None:
+                    m = _DATE_PAT.search(text)
+                    if m:
+                        d = parse_date(m.group(1).strip())
+                        if d:
+                            stmt_date = d.strftime("%Y-%m-%d")
+
+                if expected_count is None:
+                    m = _TX_COUNT_PAT.search(text)
+                    if m:
+                        try:
+                            expected_count = int(m.group(1))
+                        except ValueError:
+                            pass
+
+        # Fallback: use the balance column of the first and last valid transaction
+        # to infer opening/closing if not found in text
+        if opening is None or closing is None:
+            txs = parse_pdf(path)
+            if txs:
+                balances = [t["balance"] for t in txs if t.get("balance") is not None]
+                if balances:
+                    if closing is None:
+                        closing = balances[-1]
+                    if opening is None and len(balances) > 1:
+                        # opening is before the first tx — not directly stored,
+                        # but closing of previous statement = opening of this one.
+                        # Best approximation: don't guess.
+                        pass
+
+    except Exception:
+        pass
+
+    return {
+        "opening_balance":   opening,
+        "closing_balance":   closing,
+        "statement_date":    stmt_date,
+        "expected_tx_count": expected_count,
+    }
+

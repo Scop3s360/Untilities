@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from app import database as db
-from app.services.pdf_parser import parse_pdf, extract_merchant
+from app.services.pdf_parser import parse_pdf, extract_merchant, parse_statement_meta
 from app.config import DB_PATH, RULES_DB_PATH
 from rule_engine import RuleEngine
 from rule_engine.db import lookup_merchant
@@ -28,12 +28,20 @@ def get_engine() -> RuleEngine:
 
 @dataclass
 class ImportResult:
-    filename:      str
-    bank:          str
-    period_label:  str
-    tx_count:      int
-    dup_count:     int
-    error:         str | None = None
+    filename:        str
+    bank:            str
+    period_label:    str
+    tx_count:        int
+    dup_count:       int
+    error:           str | None = None
+    opening_balance: float | None = None
+    closing_balance: float | None = None
+    statement_date:  str | None = None
+    validation:      list[str] = None   # list of validation message strings
+
+    def __post_init__(self):
+        if self.validation is None:
+            self.validation = []
 
 def import_file(filepath: str) -> ImportResult:
     path = Path(filepath)
@@ -93,8 +101,35 @@ def _import_pdf(filepath: str) -> ImportResult:
         )
         if ok: inserted += 1
         else:  dupes   += 1
-    db.finalise_statement(DB_PATH, stmt_id, inserted, dupes)
-    return ImportResult(path.name, "Nationwide", period, inserted, dupes)
+    # Extract statement-level metadata (opening/closing balance, date)
+    meta = parse_statement_meta(filepath)
+    opening  = meta.get("opening_balance")
+    closing  = meta.get("closing_balance")
+    stmt_dt  = meta.get("statement_date")
+    exp_count = meta.get("expected_tx_count")
+
+    # Validation checks
+    validation: list[str] = []
+    validation.append("opening_balance" if opening is not None
+                      else "! Opening Balance not found in statement")
+    validation.append("closing_balance" if closing is not None
+                      else "! Closing Balance not found in statement")
+    validation.append("statement_date"  if stmt_dt  is not None
+                      else "! Statement Date not found")
+    if exp_count is not None:
+        if inserted == exp_count:
+            validation.append(f"tx_count_match ({inserted} = {exp_count})")
+        else:
+            validation.append(f"! Transaction count mismatch: imported {inserted}, expected {exp_count}")
+
+    db.finalise_statement(DB_PATH, stmt_id, inserted, dupes,
+                         opening_balance=opening,
+                         closing_balance=closing,
+                         statement_date=stmt_dt,
+                         expected_tx_count=exp_count)
+    return ImportResult(path.name, "Nationwide", period, inserted, dupes,
+                       opening_balance=opening, closing_balance=closing,
+                       statement_date=stmt_dt, validation=validation)
 
 def _import_csv(filepath: str) -> ImportResult:
     path = Path(filepath)

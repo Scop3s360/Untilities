@@ -140,16 +140,18 @@ class ImportsPage(QWidget):
         lay.addWidget(hist_lbl)
 
         self._hist_tbl = QTableWidget()
-        self._hist_tbl.setColumnCount(8)
-        self._hist_tbl.setHorizontalHeaderLabels(
-            ["Statement", "Bank", "Period", "Pages", "Transactions", "Duplicates", "Imported", ""])
+        self._hist_tbl.setColumnCount(9)
+        self._hist_tbl.setHorizontalHeaderLabels([
+            "Statement", "Bank", "Period", "Pages",
+            "Opening Balance", "Closing Balance",
+            "Transactions", "Imported", ""])
         self._hist_tbl.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._hist_tbl.setAlternatingRowColors(True)
         self._hist_tbl.verticalHeader().setVisible(False)
         hdr = self._hist_tbl.horizontalHeader()
         hdr.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        hdr.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
-        self._hist_tbl.setColumnWidth(7, 140)
+        hdr.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)
+        self._hist_tbl.setColumnWidth(8, 140)
         self._hist_tbl.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         lay.addWidget(self._hist_tbl)
 
@@ -194,6 +196,38 @@ class ImportsPage(QWidget):
         if errors:
             QMessageBox.warning(self, "Import Warning",
                 "\n".join(f"{r.filename}: {r.error}" for r in errors))
+
+        # Show validation summary for each imported statement
+        for r in results:
+            if r.error:
+                continue
+            lines = [f"<b>{r.filename}</b><br>"]
+            has_warn = False
+            for v in (r.validation or []):
+                if v == "opening_balance":
+                    lines.append("✓ Opening Balance Found")
+                elif v == "closing_balance":
+                    lines.append("✓ Closing Balance Found")
+                elif v == "statement_date":
+                    lines.append("✓ Statement Date Found")
+                elif v.startswith("tx_count_match"):
+                    lines.append(f"✓ {v.replace('tx_count_match ', '')}")
+                elif v.startswith("!"):
+                    lines.append(f"⚠ {v[2:]}")
+                    has_warn = True
+            # Balance line
+            if r.closing_balance is not None:
+                lines.append(f"<br>Closing Balance: <b>£{r.closing_balance:,.2f}</b>")
+            if r.opening_balance is not None:
+                lines.append(f"Opening Balance: <b>£{r.opening_balance:,.2f}</b>")
+            lines.append(f"<br>{r.tx_count} transactions imported"
+                         + (f" ({r.dup_count} duplicates skipped)" if r.dup_count else ""))
+            msg = "<br>".join(lines)
+            if has_warn:
+                QMessageBox.warning(self, "Import Validation", msg)
+            else:
+                QMessageBox.information(self, "Import Validation ✓", msg)
+
         self._load_history()
         self.imports_complete.emit()
 
@@ -202,19 +236,27 @@ class ImportsPage(QWidget):
         self._hist_tbl.setRowCount(len(stmts))
         for r, s in enumerate(stmts):
             self._hist_tbl.setRowHeight(r, 38)
+
+            ob = s.get("opening_balance")
+            cb = s.get("closing_balance")
             vals = [
                 s["filename"],
                 s["bank"],
-                s.get("period_label", ""),
+                s.get("period_label", "") or s.get("statement_date", ""),
                 str(s.get("pages", 0)),
+                f"£{ob:,.2f}" if ob is not None else "—",
+                f"£{cb:,.2f}" if cb is not None else "—",
                 str(s["transaction_count"]),
-                str(s["duplicate_count"]),
                 s["imported_at"][:19].replace("T", " "),
             ]
             for c, v in enumerate(vals):
                 item = QTableWidgetItem(v)
                 item.setData(Qt.ItemDataRole.UserRole, s["id"])
                 item.setTextAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+                # Colour closing balance
+                if c == 5 and cb is not None:
+                    col = QColor("#4ade80") if cb >= 0 else QColor("#f87171")
+                    item.setForeground(col)
                 self._hist_tbl.setItem(r, c, item)
 
             # "View Transactions" button in last column
@@ -223,20 +265,27 @@ class ImportsPage(QWidget):
             btn.setStyleSheet(f"color:{C['accent']};font-size:11px;padding:0 8px;")
             stmt_id = s["id"]
             btn.clicked.connect(lambda _, sid=stmt_id: self._view_transactions(sid))
-            self._hist_tbl.setCellWidget(r, 7, btn)
+            self._hist_tbl.setCellWidget(r, 8, btn)
 
     def _view_transactions(self, stmt_id: int):
-        """Open the Transactions page filtered to this statement's period."""
+        """Show a summary of this statement's details."""
         stmts = db.get_all_statements(DB_PATH)
         s = next((x for x in stmts if x["id"] == stmt_id), None)
         if s:
-            period = s.get("period_label", "") or s["filename"]
-            QMessageBox.information(
-                self, "View Transactions",
-                f"Navigate to the Transactions page and search for:\n\n\"{period}\"\n\n"
-                f"  •  {s['transaction_count']} transactions imported\n"
-                f"  •  {s.get('pages', 0)} pages\n"
-                f"  •  Imported {s['imported_at'][:19].replace('T', ' ')}")
+            ob = s.get("opening_balance")
+            cb = s.get("closing_balance")
+            period = s.get("period_label") or s.get("statement_date") or s["filename"]
+            lines = [
+                f"Statement:   {period}",
+                f"Transactions: {s['transaction_count']}",
+                f"Pages:        {s.get('pages', 0)}",
+            ]
+            if ob is not None:
+                lines.append(f"Opening Balance: £{ob:,.2f}")
+            if cb is not None:
+                lines.append(f"Closing Balance: £{cb:,.2f}")
+            lines.append(f"\nImported: {s['imported_at'][:19].replace('T', ' ')}")
+            QMessageBox.information(self, "Statement Details", "\n".join(lines))
 
     def _delete_selected(self):
         row = self._hist_tbl.currentRow()

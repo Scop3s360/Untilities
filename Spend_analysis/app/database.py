@@ -24,7 +24,11 @@ CREATE TABLE IF NOT EXISTS statements (
     filepath          TEXT,
     bank              TEXT    NOT NULL DEFAULT 'Nationwide',
     period_label      TEXT,
+    statement_date    TEXT,
     pages             INTEGER NOT NULL DEFAULT 0,
+    opening_balance   REAL,
+    closing_balance   REAL,
+    expected_tx_count INTEGER,
     imported_at       TEXT    NOT NULL,
     transaction_count INTEGER NOT NULL DEFAULT 0,
     duplicate_count   INTEGER NOT NULL DEFAULT 0,
@@ -90,17 +94,43 @@ def insert_statement(db_path: Path, filename: str, filepath: str,
         return cur.lastrowid
 
 def finalise_statement(db_path: Path, stmt_id: int,
-                       tx_count: int, dup_count: int) -> None:
+                       tx_count: int, dup_count: int,
+                       opening_balance: float | None = None,
+                       closing_balance: float | None = None,
+                       statement_date: str | None = None,
+                       expected_tx_count: int | None = None,
+                       status: str = "complete") -> None:
     with _conn(db_path) as con:
         con.execute(
-            "UPDATE statements SET transaction_count=?, duplicate_count=? WHERE id=?",
-            (tx_count, dup_count, stmt_id))
+            """UPDATE statements
+               SET transaction_count=?, duplicate_count=?,
+                   opening_balance=?, closing_balance=?,
+                   statement_date=?, expected_tx_count=?, status=?
+               WHERE id=?""",
+            (tx_count, dup_count, opening_balance, closing_balance,
+             statement_date, expected_tx_count, status, stmt_id))
 
 def get_all_statements(db_path: Path) -> list[dict]:
     with _conn(db_path) as con:
         rows = con.execute(
             "SELECT * FROM statements ORDER BY imported_at DESC").fetchall()
     return [dict(r) for r in rows]
+
+
+def get_latest_statement(db_path: Path) -> dict | None:
+    """
+    Return the most recently dated statement (by statement_date, then imported_at).
+    This is the source of truth for Current Balance.
+    """
+    with _conn(db_path) as con:
+        row = con.execute("""
+            SELECT * FROM statements
+            ORDER BY
+                CASE WHEN statement_date IS NOT NULL AND statement_date != ''
+                     THEN statement_date ELSE imported_at END DESC
+            LIMIT 1
+        """).fetchone()
+    return dict(row) if row else None
 
 
 def get_import_summary(db_path: Path) -> dict:

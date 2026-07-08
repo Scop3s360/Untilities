@@ -70,23 +70,23 @@ class DashboardPage(QWidget):
         # ── Summary cards ─────────────────────────────────────────
         self._card_income   = SummaryCard("Total Income",   "£0",  "This period", "💰", C["green"])
         self._card_spend    = SummaryCard("Total Spending", "£0",  "This period", "💳", C["red"])
-        self._card_saved    = SummaryCard("Saved",          "£0",  "This period", "🏦", C["blue"])
-        self._card_net      = SummaryCard("Net Position",   "£0",  "",            "📊", C["accent"])
-        self._card_txcount  = SummaryCard("Transactions",   "0",   "Imported",    "📋")
-        self._card_stmts    = SummaryCard("Statements",     "0",   "Imported",    "📄")
+        self._card_balance  = SummaryCard("Current Balance", "—",  "Latest statement", "🏦", C["blue"])
+        self._card_net      = SummaryCard("Net Position",   "£0",  "This period",     "📊", C["accent"])
+        self._card_txcount  = SummaryCard("Transactions",   "0",   "Imported",        "📋")
+        self._card_stmts    = SummaryCard("Statements",     "0",   "Imported",        "📄")
 
         for card, page in [
             (self._card_income,  "transactions"),
             (self._card_spend,   "transactions"),
-            (self._card_saved,   "categories"),
+            (self._card_balance, "imports"),
             (self._card_txcount, "transactions"),
         ]:
             card.clicked.connect(lambda p=page: self.navigate.emit(p, {}))
 
         body.addWidget(SummaryCardRow([
-            self._card_income, self._card_spend,
-            self._card_saved,  self._card_net,
-            self._card_txcount, self._card_stmts,
+            self._card_income,   self._card_spend,
+            self._card_balance,  self._card_net,
+            self._card_txcount,  self._card_stmts,
         ]))
 
         # ── Charts row ────────────────────────────────────────────
@@ -195,13 +195,26 @@ class DashboardPage(QWidget):
         stats = db.get_dashboard_stats(DB_PATH, s, e)
         self._card_income.set_value(f"£{stats['total_income']:,.2f}")
         self._card_spend.set_value(f"£{stats['total_spending']:,.2f}")
-        self._card_saved.set_value(f"£{stats['total_saved']:,.2f}")
         net = stats["net"]
         col = C["green"] if net >= 0 else C["red"]
         self._card_net._value_lbl.setStyleSheet(f"color:{col};font-size:22px;font-weight:700;")
         self._card_net.set_value(f"£{net:,.2f}")
         self._card_txcount.set_value(str(stats["tx_count"]))
         self._card_stmts.set_value(str(stats["stmt_count"]))
+
+        # ── Current Balance: source of truth = latest statement closing balance ──
+        latest = db.get_latest_statement(DB_PATH)
+        if latest and latest.get("closing_balance") is not None:
+            bal = latest["closing_balance"]
+            period = latest.get("period_label") or latest.get("statement_date") or latest["filename"]
+            self._card_balance.set_value(f"£{bal:,.2f}")
+            self._card_balance._sub_lbl.setText(f"Source: {period}")
+            bal_col = C["green"] if bal >= 0 else C["red"]
+            self._card_balance._value_lbl.setStyleSheet(
+                f"color:{bal_col};font-size:22px;font-weight:700;")
+        else:
+            self._card_balance.set_value("—")
+            self._card_balance._sub_lbl.setText("No statement imported yet")
 
         cat_data = db.get_spending_by_category(DB_PATH, s, e)
         self._donut.update(cat_data)

@@ -33,10 +33,17 @@ def main():
     # ── Idempotent schema migrations ───────────────────────────────────────
     import sqlite3 as _sql
     with _sql.connect(str(DB_PATH)) as _c:
-        # Add pages column to statements if missing (new in this version)
         existing = [r[1] for r in _c.execute("PRAGMA table_info(statements)").fetchall()]
-        if "pages" not in existing:
-            _c.execute("ALTER TABLE statements ADD COLUMN pages INTEGER NOT NULL DEFAULT 0")
+        new_cols = {
+            "pages":             "ALTER TABLE statements ADD COLUMN pages INTEGER NOT NULL DEFAULT 0",
+            "statement_date":    "ALTER TABLE statements ADD COLUMN statement_date TEXT",
+            "opening_balance":   "ALTER TABLE statements ADD COLUMN opening_balance REAL",
+            "closing_balance":   "ALTER TABLE statements ADD COLUMN closing_balance REAL",
+            "expected_tx_count": "ALTER TABLE statements ADD COLUMN expected_tx_count INTEGER",
+        }
+        for col, ddl in new_cols.items():
+            if col not in existing:
+                _c.execute(ddl)
 
     # ── Pre-warm the rule engine ───────────────────────────────────────────
     from app.services.import_service import get_engine
