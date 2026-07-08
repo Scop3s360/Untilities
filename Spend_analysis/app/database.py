@@ -118,6 +118,86 @@ def clear_all_data(db_path: Path) -> dict:
         con.execute("DELETE FROM sqlite_sequence WHERE name IN ('transactions','statements')")
     return {"transactions": tx_count, "statements": stmt_count}
 
+# ── Merchant management ────────────────────────────────────────────────────────
+
+_UNCATEGORISED_CATS = ("'Other'", "'Unknown'", "''")
+
+def get_merchant_list(db_path: Path, *, view: str = "all",
+                      search: str | None = None,
+                      category: str | None = None,
+                      min_spend: float = 0.0,
+                      min_count: int = 0,
+                      sort_by: str = "total_spend") -> list[dict]:
+    """
+    Return one row per merchant with category, stats and status.
+    view: 'all' | 'categorised' | 'uncategorised'
+    sort_by: 'total_spend' | 'tx_count' | 'merchant' | 'last_date' | 'category'
+    """
+    params: list = []
+    filters = ["merchant != ''"]
+
+    if search:
+        filters.append("LOWER(merchant) LIKE ?")
+        params.append(f"%{search.lower()}%")
+
+    where = "WHERE " + " AND ".join(filters)
+
+    sort_map = {
+        "total_spend": "total_spend DESC, merchant ASC",
+        "tx_count":    "tx_count DESC, merchant ASC",
+        "merchant":    "merchant ASC",
+        "last_date":   "last_date DESC",
+        "category":    "category ASC, merchant ASC",
+    }
+    order = sort_map.get(sort_by, "total_spend DESC")
+
+    # Outer filters applied after CTE
+    outer: list[str] = []
+    if view == "uncategorised":
+        outer.append(f"(category IN ('Other','Unknown') OR category IS NULL OR category = '')")
+    elif view == "categorised":
+        outer.append("category NOT IN ('Other','Unknown') AND category IS NOT NULL AND category != ''")
+    if category:
+        outer.append("category = ?"); params.append(category)
+    if min_spend > 0:
+        outer.append(f"total_spend >= {float(min_spend)}")
+    if min_count > 1:
+        outer.append(f"tx_count >= {int(min_count)}")
+
+    outer_where = ("WHERE " + " AND ".join(outer)) if outer else ""
+
+    sql = f"""
+        WITH base AS (
+            SELECT
+                merchant,
+                (SELECT t2.category FROM transactions t2
+                 WHERE t2.merchant = t.merchant
+                 ORDER BY t2.date DESC LIMIT 1)   AS category,
+                COUNT(*)                           AS tx_count,
+                COALESCE(SUM(debit), 0)            AS total_spend,
+                MAX(date)                          AS last_date
+            FROM transactions t
+            {where}
+            GROUP BY merchant
+        )
+        SELECT * FROM base
+        {outer_where}
+        ORDER BY {order}
+    """
+    with _conn(db_path) as con:
+        rows = con.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_merchant_category(db_path: Path, merchant: str, category: str) -> int:
+    """Set category on ALL transactions for this merchant. Returns row count."""
+    with _conn(db_path) as con:
+        cur = con.execute(
+            "UPDATE transactions SET category=? WHERE merchant=?",
+            (category, merchant))
+        return cur.rowcount
+
+
 # ── Transaction CRUD ───────────────────────────────────────────────────────────
 
 def insert_transaction(db_path: Path, stmt_id: int, date_str: str,

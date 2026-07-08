@@ -140,6 +140,40 @@ def add_user_rule(db_path: Path, keyword: str, category_name: str) -> Rule:
     return _row_to_rule(row)
 
 
+def upsert_user_rule(db_path: Path, keyword: str, category_name: str) -> None:
+    """
+    Create or update a user rule for *keyword*.
+    If a user rule already exists for this keyword it is updated in-place.
+    Built-in rules are never touched.
+    Reloads the in-memory engine so the change takes effect immediately.
+    """
+    now = _now()
+    kw  = keyword.strip().upper()
+    cat = category_name.strip()
+    with _connect(db_path) as conn:
+        existing = conn.execute(
+            "SELECT id FROM rules WHERE keyword=? AND is_user_rule=1", (kw,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE rules SET category_name=?, modified_at=? WHERE id=?",
+                (cat, now, existing["id"]))
+        else:
+            conn.execute("""
+                INSERT INTO rules
+                    (keyword, category_name, priority, enabled,
+                     is_user_rule, created_at, modified_at)
+                VALUES (?, ?, 0, 1, 1, ?, ?)""",
+                (kw, cat, now, now))
+    logger.info("Upserted user rule: '%s' -> '%s'", kw, cat)
+    # Hot-reload the engine so the new rule is active immediately
+    try:
+        from app.services.import_service import get_engine
+        get_engine().reload_rules()
+    except Exception:
+        pass  # Engine may not be initialised in test contexts
+
+
 def update_user_rule(db_path: Path, rule_id: int,
                      keyword: str | None = None,
                      category_name: str | None = None,
