@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Password Generator</h1>
+            <p>Create secure passwords with customizable options</p>
+        </header>
+
+        <div class="generator-card">
+            <div class="options-section">
+                <h3>Character Types</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="uppercase" checked>
+                        <span class="checkmark"></span>
+                        Uppercase Letters (A-Z)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="lowercase" checked>
+                        <span class="checkmark"></span>
+                        Lowercase Letters (a-z)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="numbers" checked>
+                        <span class="checkmark"></span>
+                        Numbers (0-9)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="symbols" checked>
+                        <span class="checkmark"></span>
+                        Symbols (!@#$%^&*)
+                    </label>
+                </div>
+            </div>
+
+            <div class="length-section">
+                <h3>Password Length</h3>
+                <div class="length-controls">
+                    <input type="range" id="lengthSlider" min="4" max="50" value="16" class="slider">
+                    <input type="number" id="lengthInput" min="4" max="50" value="16" class="length-input">
+                </div>
+            </div>
+
+            <div class="advanced-section">
+                <h3>Advanced Options</h3>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="avoidConsecutive">
+                    <span class="checkmark"></span>
+                    Avoid 3+ consecutive character types
+                </label>
+            </div>
+
+            <button id="generateBtn" class="generate-btn">Generate Password</button>
+
+            <div class="result-section">
+                <div class="password-display">
+                    <input type="text" id="passwordOutput" readonly placeholder="Your password will appear here...">
+                    <button id="copyBtn" class="copy-btn" title="Copy to clipboard">📋</button>
+                </div>
+                <div class="strength-meter">
+                    <div class="strength-bar">
+                        <div id="strengthFill" class="strength-fill"></div>
+                    </div>
+                    <span id="strengthText" class="strength-text">Generate a password to see strength</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-section">
+            <h3>💡 Password Security Tips</h3>
+            <ul>
+                <li>Use at least 12-16 characters for strong passwords</li>
+                <li>Include a mix of uppercase, lowercase, numbers, and symbols</li>
+                <li>Never reuse passwords across different accounts</li>
+                <li>Consider using a password manager</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

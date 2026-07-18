@@ -1,5 +1,0 @@
-tkcalendar==1.6.1
-matplotlib==3.7.2
-pandas==2.0.3
-openpyxl==3.1.2
-numpy==1.24.3
